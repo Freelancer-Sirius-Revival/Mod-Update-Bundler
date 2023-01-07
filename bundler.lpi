@@ -75,7 +75,7 @@
         <UnitName Value="UMainForm"/>
       </Unit>
       <Unit>
-        <Filename Value="LZMA.442b/ufiles.pas"/>
+        <Filename Value="ufiles.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="UFiles"/>
       </Unit>

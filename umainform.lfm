@@ -21,6 +21,7 @@ object MainForm: TMainForm
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Left = 8
     BorderSpacing.Right = 8
+    OnChange = SelectInputPathEditChange
     TabOrder = 0
   end
   object SelectInputPathButton: TButton
@@ -42,6 +43,7 @@ object MainForm: TMainForm
     Top = 129
     Width = 147
     Caption = 'Bundle Mod Files'
+    Enabled = False
     OnClick = BeginBundlingButtonClick
     TabOrder = 2
   end
