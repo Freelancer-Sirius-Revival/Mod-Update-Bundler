@@ -10,16 +10,16 @@ uses
   athreads,
   {$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, UMainForm
-  { you can add units after this };
+  Forms, UMainForm, UFiles;
 
 {$R *.res}
 
 begin
   RequireDerivedFormResource := True;
+  Application.Title := 'FL:SR Update Bundler';
   Application.Scaled := True;
   Application.Initialize;
-  Application.CreateForm(TForm1, Form1);
+  Application.CreateForm(TMainForm, MainForm);
   Application.Run;
 end.
 

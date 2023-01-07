@@ -1,9 +1,52 @@
 object MainForm: TMainForm
-  Left = 762
+  Left = 2285
   Height = 240
-  Top = 311
+  Top = 475
   Width = 320
   Caption = 'FL:SR Update Bundler'
+  ClientHeight = 240
+  ClientWidth = 320
   Position = poDefault
   LCLVersion = '2.3.0.0'
+  object SelectInputPathEdit: TEdit
+    AnchorSideLeft.Control = SelectInputPathButton
+    AnchorSideLeft.Side = asrBottom
+    AnchorSideTop.Control = SelectInputPathButton
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 176
+    Height = 32
+    Top = 8
+    Width = 136
+    Anchors = [akTop, akLeft, akRight]
+    BorderSpacing.Left = 8
+    BorderSpacing.Right = 8
+    TabOrder = 0
+  end
+  object SelectInputPathButton: TButton
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    Left = 8
+    Height = 32
+    Top = 8
+    Width = 160
+    BorderSpacing.Left = 8
+    BorderSpacing.Top = 8
+    Caption = 'Select Mod Directory…'
+    OnClick = SelectInputPathButtonClick
+    TabOrder = 1
+  end
+  object BeginBundlingButton: TButton
+    Left = 8
+    Height = 25
+    Top = 129
+    Width = 147
+    Caption = 'Bundle Mod Files'
+    OnClick = BeginBundlingButtonClick
+    TabOrder = 2
+  end
+  object SelectInputPathDialog: TSelectDirectoryDialog
+    Left = 144
+    Top = 8
+  end
 end
