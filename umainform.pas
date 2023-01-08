@@ -45,8 +45,12 @@ begin
   begin
     if FileExists(IgnoredPathsFileName) then
     begin
-      ExcludedPaths := TStringList.Create;
-      ExcludedPaths.LoadFromFile(IgnoredPathsFileName);
+      try
+        ExcludedPaths := TStringList.Create;
+        ExcludedPaths.LoadFromFile(IgnoredPathsFileName);
+      finally
+        FreeAndNil(ExcludedPaths);
+      end;
     end;
 
     FileList := UFiles.FindRelevantFiles(BasePath, ExcludedPaths);
