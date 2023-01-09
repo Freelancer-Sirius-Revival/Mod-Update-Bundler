@@ -8,12 +8,12 @@ uses
   Classes;
 
 type
-  TFileSize = record
+  TFileInfo = record
     Path: String;
     Size: Int64;
   end;
-  TFileSizeArray = array of TFileSize;
-  TFilesChunks = array of TFileSizeArray;
+  TFileInfoArray = array of TFileInfo;
+  TFilesChunks = array of TFileInfoArray;
 
 function FindRelevantFiles(const BasePath: String; const ExcludedPaths: TStrings): TStrings;
 function ComputeChunkedFiles(const FileList: TStrings; const SplittingFileExtensions: array of String): TFilesChunks;
@@ -44,7 +44,7 @@ begin
 
       for Index := Result.Count - 1 downto 0 do
         // Normalize the path and remove the base path part from it to compare it against the excluded path.
-        if Result.Strings[Index].Remove(0, BasePath.Length).ToLower.StartsWith(LoweredExcludedPath) then
+        if Result.Strings[Index].Remove(0, BasePath.Length).ToLower.Replace('\', '/').StartsWith(LoweredExcludedPath) then
           Result.Delete(Index);
     end;
 end;
@@ -92,7 +92,7 @@ begin
   end;
 end;
 
-function GetSizeSortedFiles(const FilePaths: TStrings): TFileSizeArray;
+function GetSizeSortedFiles(const FilePaths: TStrings): TFileInfoArray;
 
   procedure InsertFileSize(const Path: String; const Size: Int64; var FileSizesCount: ValSInt);
   var
@@ -128,7 +128,7 @@ begin
     InsertFileSize(FilePaths.Strings[Index], GetFileSize(FilePaths.Strings[Index]), FileSizesCount);
 end;
 
-function AssembleFilesChunk(const FileSizes: TFileSizeArray; const StartIndex: ValSInt; const MaxChunkSize: Uint32): TFileSizeArray;
+function AssembleFilesChunk(const FileSizes: TFileInfoArray; const StartIndex: ValSInt; const MaxChunkSize: Uint32): TFileInfoArray;
 var
   Index: ValSInt;
   AccumulatedSize: Uint32 = 0;
@@ -158,9 +158,9 @@ function ComputeChunkedFiles(const FileList: TStrings; const SplittingFileExtens
 var
   SeparatedFilePaths: TArrayOfTStrings;
   FilePaths: TStrings;
-  SortedFileSizes: TFileSizeArray;
+  SortedFileSizes: TFileInfoArray;
   SortedFileSizesIndex: ValSInt;
-  CreatedChunkedFileSizes: TFileSizeArray;
+  CreatedChunkedFileSizes: TFileInfoArray;
   ChunkedFileSizesIndex: ValSInt = 0;
 begin
   Result := nil;

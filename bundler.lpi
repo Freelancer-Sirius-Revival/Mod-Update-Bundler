@@ -23,7 +23,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="LZMA.442b/compression/LZMA;LZMA.442b;LZMA.442b/compression/RangeCoder;LZMA.442b/compression/LZ"/>
+            <OtherUnitFiles Value="LZMA.442b/compression/LZMA;LZMA.442b/compression/RangeCoder;LZMA.442b/compression/LZ"/>
             <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -37,6 +37,7 @@
           <Linking>
             <Debugging>
               <GenerateDebugInfo Value="False"/>
+              <DebugInfoType Value="dsDwarf3"/>
             </Debugging>
             <LinkSmart Value="True"/>
             <Options>
@@ -85,25 +86,17 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="LZMA.442b/UBufferedFS.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit>
-      <Unit>
         <Filename Value="ufiles.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="UFiles"/>
       </Unit>
       <Unit>
-        <Filename Value="ucompression.pas"/>
+        <Filename Value="uencoding.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="UCompression"/>
+        <UnitName Value="UEncoding"/>
       </Unit>
       <Unit>
         <Filename Value="LZMA.442b/compression/RangeCoder/UBitTreeEncoder.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit>
-      <Unit>
-        <Filename Value="LZMA.442b/UCRC.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
@@ -119,7 +112,16 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="LZMA.442b/compression/LZ/ULZOutWindow.pas"/>
+        <Filename Value="ubundling.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="UBundling"/>
+      </Unit>
+      <Unit>
+        <Filename Value="LZMA.442b/compression/RangeCoder/URangeDecoder.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="LZMA.442b/compression/RangeCoder/URangeEncoder.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
     </Units>
@@ -131,7 +133,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="LZMA.442b/compression/LZMA;LZMA.442b;LZMA.442b/compression/RangeCoder;LZMA.442b/compression/LZ"/>
+      <OtherUnitFiles Value="LZMA.442b/compression/LZMA;LZMA.442b/compression/RangeCoder;LZMA.442b/compression/LZ"/>
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>

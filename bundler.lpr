@@ -10,7 +10,8 @@ uses
   athreads,
   {$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, UMainForm, UBufferedFS, UCRC, ULZMACommon, ULZMAEncoder, ULZMABase, UBitTreeEncoder, ULZBinTree, ULZInWindow, ULZOutWindow, UCompression;
+  Forms, UMainForm, ULZMACommon, ULZMAEncoder, ULZMABase, UBitTreeEncoder, URangeEncoder, URangeDecoder, ULZBinTree, ULZInWindow, UEncoding,
+  UBundling;
 
 {$R *.res}
 

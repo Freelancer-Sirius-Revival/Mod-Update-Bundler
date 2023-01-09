@@ -30,16 +30,20 @@ implementation
 {$R *.lfm}
 
 uses
-  UFiles;
+  UFiles,
+  UBundling;
 
 const
   IgnoredPathsFileName = 'ignoredPaths.txt';
+  BundleFileName = 'bundle.flsr';
 
 procedure ProcessBundling(const BasePath: String);
 var
   FileList: TStrings;
-  Path: String;
   ExcludedPaths: TStrings = nil;
+  FilesChunks: TFilesChunks;
+  Bundle: TStream;
+  FileMode: Int32;
 begin
   if DirectoryExists(BasePath) then
   begin
@@ -58,8 +62,19 @@ begin
     if Assigned(ExcludedPaths) then
       ExcludedPaths.Free;
 
-    for Path in FileList do
-      WriteLn(Path);
+    FilesChunks := UFiles.ComputeChunkedFiles(FileList, ['.ini']);
+    if FileExists(BundleFileName) then
+      FileMode := fmOpenWrite
+    else
+      FileMode := fmCreate;
+    try
+      Bundle := TFileStream.Create(BundleFileName, FileMode);
+      UBundling.BundleFiles(FilesChunks, BasePath, Bundle);
+    finally
+      Bundle.Free;
+    end;
+    SetLength(FilesChunks, 0);
+
     FileList.Free;
   end;
 end;
