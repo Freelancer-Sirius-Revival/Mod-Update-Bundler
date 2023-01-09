@@ -44,6 +44,7 @@ var
   FilesChunks: TFilesChunks;
   Bundle: TStream;
   FileMode: Int32;
+  Index: ValSInt;
 begin
   if DirectoryExists(BasePath) then
   begin
@@ -73,6 +74,9 @@ begin
     finally
       Bundle.Free;
     end;
+
+    for Index := 0 to High(FilesChunks) do
+      SetLength(FilesChunks[Index], 0)
     SetLength(FilesChunks, 0);
 
     FileList.Free;

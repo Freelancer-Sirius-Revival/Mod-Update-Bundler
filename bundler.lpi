@@ -3,6 +3,9 @@
   <ProjectOptions>
     <Version Value="12"/>
     <General>
+      <Flags>
+        <MainUnitHasUsesSectionForAllUnits Value="False"/>
+      </Flags>
       <SessionStorage Value="InProjectDir"/>
       <Title Value="FL:SR Update Bundler"/>
       <Scaled Value="True"/>

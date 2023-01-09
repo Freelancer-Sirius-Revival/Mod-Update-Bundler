@@ -10,8 +10,8 @@ uses
   athreads,
   {$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, UMainForm, ULZMACommon, ULZMAEncoder, ULZMABase, UBitTreeEncoder, URangeEncoder, URangeDecoder, ULZBinTree, ULZInWindow, UEncoding,
-  UBundling;
+  Forms,
+  UMainForm;
 
 {$R *.res}
 
@@ -23,4 +23,3 @@ begin
   Application.CreateForm(TMainForm, MainForm);
   Application.Run;
 end.
-
