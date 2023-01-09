@@ -2,6 +2,7 @@ unit ULZMAEncoder;
 
 {$IFDEF FPC}
 {$MODE Delphi}
+{$R-}
 {$ENDIF}
 
 interface
@@ -1171,19 +1172,7 @@ var i:integer;
 begin
 properties[0] := (_posStateBits * 5 + _numLiteralPosStateBits) * 9 + _numLiteralContextBits;
 for i := 0 to 3 do
-    {$IFDEF FPC}
-      {$IFOPT R+}
-        {$DEFINE RANGEON}
-        {$R-}
-      {$ELSE}
-        {$UNDEF RANGEON}
-      {$ENDIF}
-    {$EndIf}
     properties[1 + i] := (_dictionarySize shr (8 * i));
-    {$IFDEF RANGEON}
-      {$R+}
-      {$UNDEF RANGEON}
-    {$ENDIF}
 outStream.write(properties, kPropSize);
 end;
 
