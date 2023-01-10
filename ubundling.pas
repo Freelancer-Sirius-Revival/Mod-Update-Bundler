@@ -65,6 +65,7 @@ begin
 end;
 
 type
+  // This class contains all file chunks that will be processed by the bundler threads.
   TFilesChunksManager = class
   private
     FFilesBasePath: String;
@@ -107,6 +108,8 @@ begin
 end;
 
 type
+  // The accumulation thread gathers each stream that was finished by the bundler threads and writes it into the destination stream.
+  // Due the nature of multi threading, the order of streams written into the destination may vary each time.
   TAccumulationThread = class(TThread)
   private
     FDestinationStream: TStream;
@@ -177,6 +180,7 @@ begin
 end;
 
 type
+  // The bundling thread gathers file chunks from the file chunk manager and writes the encoded result into the accumulation thread.
   TBundlingThread = class(TThread)
   private
     FChunksManager: TFilesChunksManager;
@@ -225,6 +229,7 @@ var
   Index: ValSInt;
   BundlersFinished: Boolean;
 begin
+  // Prepare all threads and file chunks.
   FilesChunksManager := TFilesChunksManager.Create(BasePath, FilesChunks);
 
   AccumulationThread := TAccumulationThread.Create(TargetStream);
@@ -237,9 +242,11 @@ begin
   begin
     BundlingThreads[Index] := TBundlingThread.Create(FilesChunksManager, AccumulationThread);
     BundlingThreads[Index].FreeOnTerminate := True;
+    // Let the games begin!
     BundlingThreads[Index].Start;
   end;
 
+  // Wait for all bundler threads to finish work by polling every now and then.
   repeat
     BundlersFinished := True;
     for Index := 0 to High(BundlingThreads) do
@@ -248,6 +255,7 @@ begin
   until BundlersFinished;
   SetLength(BundlingThreads, 0);
 
+  // Wait for the accumulation thread to have written every remaining piece of data before shutting it down.
   while AccumulationThread.GetUnprocessedCount > 0 do
     Sleep(50);
   AccumulationThread.Terminate;
