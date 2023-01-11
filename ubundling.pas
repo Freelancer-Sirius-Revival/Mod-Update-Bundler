@@ -8,7 +8,7 @@ uses
   Classes,
   UFiles;
 
-procedure BundleFiles(const FilesChunks: TFilesChunks; const BasePath: String; const TargetStream: TStream);
+procedure BundleFiles(const FilesChunks: TFilesChunks; const TargetStream: TStream);
 
 implementation
 
@@ -18,13 +18,12 @@ uses
   Contnrs,
   UEncoding;
 
-procedure BundleFilesChunk(const FilesChunk: TFileInfoArray; const BasePath: String; const TargetStream: TStream);
+procedure BundleFilesChunk(const FilesChunkId: Int64; const FilesChunk: TFileInfoArray; const TargetStream: TStream);
 var
   InputStream: TStream;
   OutputStream: TStream;
   FileInfo: TFileInfo;
   FileStream: TStream;
-  UncompressedChunkSize: Int64 = 0;
 begin
   // Read all file contents of this chunk.
   InputStream := TMemoryStream.Create;
@@ -38,51 +37,39 @@ begin
     end;
   end;
 
-  // Encode all file contents.
-  InputStream.Position := 0;
-  OutputStream := TMemoryStream.Create;
-  UEncoding.Encode(InputStream, OutputStream);
-  InputStream.Free;
+  try
+    // Encode all file contents.
+    InputStream.Position := 0;
+    OutputStream := TMemoryStream.Create;
+    UEncoding.Encode(InputStream, OutputStream);
 
-  // Write size of whole decompressed chunk.
-  for FileInfo in FilesChunk do
-    UncompressedChunkSize := UncompressedChunkSize + FileInfo.Size;
-  TargetStream.WriteQWord(UncompressedChunkSize);
+    // Write ID of this chunk.
+    TargetStream.WriteQWord(FilesChunkId);
 
-  // Write count of files in this chunk.
-  TargetStream.WriteQWord(Length(FilesChunk));
-
-  // Write individual file path and size information.
-  for FileInfo in FilesChunk do
-  begin
-    TargetStream.WriteAnsiString(FileInfo.Path.Remove(0, BasePath.Length).Trim.Replace('\', '/'));
-    TargetStream.WriteQWord(FileInfo.Size);
+    // Copy encoded stream contents over.
+    TargetStream.CopyFrom(OutputStream, 0);
+  finally                     
+    InputStream.Free;
+    OutputStream.Free;
   end;
-
-  // Copy encoded stream contents over.
-  TargetStream.CopyFrom(OutputStream, 0);
-  OutputStream.Free;
 end;
 
 type
   // This class contains all file chunks that will be processed by the bundler threads.
   TFilesChunksManager = class
   private
-    FFilesBasePath: String;
     FFilesChunks: TFilesChunks;
     FFilesChunkIndex: ValSInt;
     FCriticalSection: TRTLCriticalSection;
   public
-    constructor Create(const FilesBasePath: String; FilesChunks: TFilesChunks);
+    constructor Create(const FilesChunks: TFilesChunks);
     destructor Destroy; override;
-    function GetNextFilesChunk: TFileInfoArray;
-    property FilesBasePath: String read FFilesBasePath;
+    procedure GetNextFilesChunk(out FilesChunkId: ValSInt; out FilesChunk: TFileInfoArray);
   end;
 
-constructor TFilesChunksManager.Create(const FilesBasePath: String; FilesChunks: TFilesChunks);
+constructor TFilesChunksManager.Create(const FilesChunks: TFilesChunks);
 begin
   inherited Create;
-  FFilesBasePath := FilesBasePath;
   FFilesChunks := FilesChunks;
   FFilesChunkIndex := 0;
   InitCriticalSection(FCriticalSection);
@@ -94,16 +81,20 @@ begin
   inherited Destroy;
 end;
 
-function TFilesChunksManager.GetNextFilesChunk: TFileInfoArray;
+procedure TFilesChunksManager.GetNextFilesChunk(out FilesChunkId: ValSInt; out FilesChunk: TFileInfoArray);
 begin
   EnterCriticalSection(FCriticalSection);
   if FFilesChunkIndex < Length(FFilesChunks) then
   begin
-    Result := FFilesChunks[FFilesChunkIndex];
+    FilesChunkId := FFilesChunkIndex;
+    FilesChunk := FFilesChunks[FFilesChunkIndex];
     Inc(FFilesChunkIndex);
   end
   else
-    Result := nil;
+  begin
+    FilesChunkId := -1;
+    FilesChunk := nil;
+  end;
   LeaveCriticalSection(FCriticalSection);
 end;
 
@@ -200,6 +191,7 @@ end;
 
 procedure TBundlingThread.Execute;
 var
+  FilesChunkId: ValSInt;
   FilesChunk: TFileInfoArray;
   Stream: TStream;
 begin
@@ -208,20 +200,20 @@ begin
 
   while not Self.Terminated do
   begin
-    FilesChunk := FChunksManager.GetNextFilesChunk;
-    if not Assigned(FilesChunk) then
+    FChunksManager.GetNextFilesChunk(FilesChunkId, FilesChunk);
+    if (FilesChunkId < 0) or not Assigned(FilesChunk) then
     begin
       Self.Terminate;
       Break;
     end;
 
     Stream := TMemoryStream.Create;
-    BundleFilesChunk(FilesChunk, FChunksManager.FilesBasePath, Stream);
+    BundleFilesChunk(FilesChunkId, FilesChunk, Stream);
     FAccumulationThread.AddDataToWrite(Stream);
   end;
 end;
 
-procedure BundleFiles(const FilesChunks: TFilesChunks; const BasePath: String; const TargetStream: TStream);
+procedure BundleFiles(const FilesChunks: TFilesChunks; const TargetStream: TStream);
 var
   FilesChunksManager: TFilesChunksManager;
   AccumulationThread: TAccumulationThread;
@@ -230,7 +222,7 @@ var
   BundlersFinished: Boolean;
 begin
   // Prepare all threads and file chunks.
-  FilesChunksManager := TFilesChunksManager.Create(BasePath, FilesChunks);
+  FilesChunksManager := TFilesChunksManager.Create(FilesChunks);
 
   AccumulationThread := TAccumulationThread.Create(TargetStream);
   AccumulationThread.Start;

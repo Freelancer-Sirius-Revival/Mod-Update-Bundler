@@ -22,7 +22,8 @@ uses
   Classes,
   SysUtils,
   UFiles,
-  UBundling;
+  UBundling,
+  md5;
 
 const
   IgnoredPathsFileName = 'ignoredPaths.txt';
@@ -36,6 +37,36 @@ end;
 procedure TProcessResult.SetProcessingDone(const NewProcessingDone: Boolean);
 begin
   InterlockedExchange64(FValue, Int64(NewProcessingDone));
+end;
+
+procedure WriteMetaData(const FilesChunks: TFilesChunks; const BasePath: String; const Stream: TStream);
+var
+  FilesChunk: TFileInfoArray;
+  ChunkFile: TFileInfo;
+begin
+  // Magic number of file format.
+  Stream.Write('FLSR', SizeOf(Char) * 4);
+  // Version of file format.
+  Stream.WriteByte(1);
+
+  // Count of Chunks.
+  Stream.WriteQWord(Length(FilesChunks));
+
+  for FilesChunk in FilesChunks do
+  begin
+    // Count of files in this chunk.
+    Stream.WriteQWord(Length(FilesChunk));
+
+    for ChunkFile in FilesChunk do
+    begin
+      // First write a normalized relative path of the file.
+      Stream.WriteAnsiString(ChunkFile.Path.Remove(0, BasePath.Length).Trim.Replace('\', '/'));
+      // Second write the uncompressed size of the file.
+      Stream.WriteQWord(ChunkFile.Size);
+      // Third write an MD5 hash of the file's contents.
+      Stream.Write(MD5File(ChunkFile.Path), SizeOf(TMD5Digest));
+    end;
+  end;
 end;
 
 type
@@ -88,7 +119,8 @@ begin
       FileMode := fmCreate;
     try
       Bundle := TFileStream.Create(BundleFileName, FileMode);
-      UBundling.BundleFiles(FilesChunks, FBasePath, Bundle);
+      WriteMetaData(FilesChunks, FBasePath, Bundle);
+      UBundling.BundleFiles(FilesChunks, Bundle);
     finally
       Bundle.Free;
     end;
@@ -114,4 +146,3 @@ begin
 end;
 
 end.
-
