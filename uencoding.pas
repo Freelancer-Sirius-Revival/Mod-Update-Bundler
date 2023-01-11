@@ -134,7 +134,7 @@ begin
   end;
 end;
 
-procedure EncodeFilesChunk(const FilesChunkId: Int64; const FilesChunk: TFileInfoArray; const TargetStream: TStream);
+procedure EncodeFilesChunk(const FilesChunkId: UInt16; const FilesChunk: TFileInfoArray; const TargetStream: TStream);
 var
   InputStream: TStream;
   OutputStream: TStream;
@@ -160,7 +160,7 @@ begin
     UEncoder.Encode(InputStream, OutputStream);
 
     // Write ID of this chunk.
-    TargetStream.WriteQWord(FilesChunkId);
+    TargetStream.WriteWord(FilesChunkId);
 
     // Copy encoded stream contents over.
     TargetStream.CopyFrom(OutputStream, 0);

@@ -23,15 +23,11 @@ uses
   SysUtils,
   UFiles,
   UEncoding,
+  UBundle,
   md5;
 
 const
-  FlsrFileVersion = 1;
-  FlsrModVersion = 0;
-  FlsrFileMagicNumbers = 'FLSR';
   IgnoredPathsFileName = 'ignoredPaths.txt';
-  BundleFileName = 'bundle.flsr';
-  ChecksumFileExtension = '.md5';
 
 function TProcessResult.GetProcessingDone: Boolean;
 begin
@@ -81,40 +77,7 @@ begin
   end;
 end;
 
-procedure WriteMetaData(const FilesChunks: TFilesChunks; const BasePath: String; const Stream: TStream);
-var
-  FilesChunk: TFileInfoArray;
-  ChunkFile: TFileInfo;
-begin
-  // Magic number of file format.
-  Stream.Write(FlsrFileMagicNumbers, SizeOf(FlsrFileMagicNumbers));
-  // Version of file format.
-  Stream.WriteByte(FlsrFileVersion);
-
-  // Version of file contents.
-  Stream.WriteQWord(FlsrModVersion);
-
-  // Count of Chunks.
-  Stream.WriteQWord(Length(FilesChunks));
-
-  for FilesChunk in FilesChunks do
-  begin
-    // Count of files in this chunk.
-    Stream.WriteQWord(Length(FilesChunk));
-
-    for ChunkFile in FilesChunk do
-    begin
-      // First write a normalized relative path of the file.
-      Stream.WriteAnsiString(ChunkFile.Path.Remove(0, BasePath.Length).Trim.Replace('\', '/'));
-      // Second write the uncompressed size of the file.
-      Stream.WriteQWord(ChunkFile.Size);
-      // Third write an MD5 hash of the file's contents.
-      Stream.Write(MD5File(ChunkFile.Path), SizeOf(TMD5Digest));
-    end;
-  end;
-end;
-
-procedure CreateBundle(const FilesChunks: TFilesChunks; const BasePath: String; const FileName: String);
+procedure CreateBundle(const ContentVersion: Uint32; const BundleType: TBundleType; const FilesChunks: TFilesChunks; const BasePath: String; const FileName: String);
 var
   Bundle: TStream;
 begin
@@ -122,12 +85,12 @@ begin
   begin
     try
       Bundle := TFileStream.Create(FileName, fmCreate);
-      WriteMetaData(FilesChunks, BasePath, Bundle);
+      WriteMetaData(ContentVersion, BundleType, FilesChunks, BasePath, Bundle);
       EncodeFilesChunks(FilesChunks, Bundle);
     finally
       Bundle.Free;
     end;
-   end;
+  end;
 end;
 
 procedure Process(const BasePath: String);
@@ -136,12 +99,12 @@ var
   FilesChunks: TFilesChunks;
 begin
   FileList := GetFilteredFilesList(BasePath);
-  FilesChunks := ComputeChunkedFiles(FileList, ['.ini']);   
+  FilesChunks := ComputeChunkedFiles(FileList, ['.ini']);
   FileList.Free;
 
-  CreateBundle(FilesChunks, BasePath, BundleFileName);
+  CreateBundle(0, TFullBundle, FilesChunks, BasePath, FullBundleFileName + BundleFileExtension);
 
-  CreateChecksumFileForFile(BundleFileName);
+  CreateChecksumFileForFile(FullBundleFileName + BundleFileExtension);
 end;
 
 type

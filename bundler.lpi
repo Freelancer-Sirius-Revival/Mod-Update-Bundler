@@ -132,6 +132,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="UProcessing"/>
       </Unit>
+      <Unit>
+        <Filename Value="ubundle.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="UBundle"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
