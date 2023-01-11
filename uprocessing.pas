@@ -21,7 +21,7 @@ implementation
 uses
   Classes,
   SysUtils,
-  UFiles,
+  UInputFiles,
   UEncoding,
   UBundle,
   md5;

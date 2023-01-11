@@ -6,7 +6,7 @@ interface
 
 uses
   Classes,
-  UFiles,
+  UInputFiles,
   md5;
 
 const

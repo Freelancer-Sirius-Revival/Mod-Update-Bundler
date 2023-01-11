@@ -1,4 +1,4 @@
-unit UFiles;
+unit UInputFiles;
 
 {$mode ObjFPC}{$H+}
 
