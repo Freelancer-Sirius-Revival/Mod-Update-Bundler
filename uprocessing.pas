@@ -68,12 +68,11 @@ begin
   if DirectoryExists(FBasePath) then
   begin
     if FileExists(IgnoredPathsFileName) then
-    begin
+    begin       
+      ExcludedPaths := TStringList.Create;
       try
-        ExcludedPaths := TStringList.Create;
         ExcludedPaths.LoadFromFile(IgnoredPathsFileName);
       finally
-        FreeAndNil(ExcludedPaths);
       end;
     end;
 
