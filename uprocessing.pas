@@ -26,6 +26,9 @@ uses
   md5;
 
 const
+  FlsrFileVersion = 1;
+  FlsrModVersion = 0;
+  FlsrFileMagicNumbers = 'FLSR';
   IgnoredPathsFileName = 'ignoredPaths.txt';
   BundleFileName = 'bundle.flsr';
   BundleFileChecksumExtension = '.md5';
@@ -46,9 +49,12 @@ var
   ChunkFile: TFileInfo;
 begin
   // Magic number of file format.
-  Stream.Write('FLSR', SizeOf(Char) * 4);
+  Stream.Write(FlsrFileMagicNumbers, SizeOf(FlsrFileMagicNumbers));
   // Version of file format.
-  Stream.WriteByte(1);
+  Stream.WriteByte(FlsrFileVersion);
+
+  // Version of file contents.
+  Stream.WriteQWord(FlsrModVersion);
 
   // Count of Chunks.
   Stream.WriteQWord(Length(FilesChunks));
@@ -114,7 +120,7 @@ begin
     if Assigned(ExcludedPaths) then
       ExcludedPaths.Free;
 
-    FilesChunks := UFiles.ComputeChunkedFiles(FileList, ['.ini']);
+    FilesChunks := ComputeChunkedFiles(FileList, ['.ini']);
     if FileExists(BundleFileName) then
       FileMode := fmOpenWrite
     else
