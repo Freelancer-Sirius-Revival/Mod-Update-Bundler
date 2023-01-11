@@ -164,6 +164,9 @@ var
   ChunkedFileSizesIndex: ValSInt = 0;
 begin
   Result := nil;
+  if not Assigned(FileList) then
+    Exit;
+
   SetLength(Result, FileList.Count);
 
   // 1. separate all files by their extensions for more optimal compression results of similar files.
@@ -184,8 +187,7 @@ begin
       Inc(ChunkedFileSizesIndex);
     end;
   end;
-  setLength(Result, ChunkedFileSizesIndex);
-  SetLength(SeparatedFilePaths, 0);
+  SetLength(Result, ChunkedFileSizesIndex);
 end;
 
 end.

@@ -31,7 +31,7 @@ const
   FlsrFileMagicNumbers = 'FLSR';
   IgnoredPathsFileName = 'ignoredPaths.txt';
   BundleFileName = 'bundle.flsr';
-  BundleFileChecksumExtension = '.md5';
+  ChecksumFileExtension = '.md5';
 
 function TProcessResult.GetProcessingDone: Boolean;
 begin
@@ -41,6 +41,44 @@ end;
 procedure TProcessResult.SetProcessingDone(const NewProcessingDone: Boolean);
 begin
   InterlockedExchange64(FValue, Int64(NewProcessingDone));
+end;
+
+function GetFilteredFilesList(const BasePath: String): TStrings;
+var
+  ExcludedPaths: TStrings = nil;
+begin
+  if DirectoryExists(BasePath) then
+  begin
+    if FileExists(IgnoredPathsFileName) then
+    begin
+      try
+        ExcludedPaths := TStringList.Create;
+        ExcludedPaths.LoadFromFile(IgnoredPathsFileName);
+      finally
+      end;
+    end;
+    Result := FindRelevantFiles(BasePath, ExcludedPaths);
+    if Assigned(ExcludedPaths) then
+      ExcludedPaths.Free;
+  end
+  else
+    Result := nil;
+end;
+
+procedure CreateChecksumFileForFile(const FileName: String);
+var
+  Checksum: TStrings;
+begin
+  if FileExists(FileName) then
+  begin
+    try
+      Checksum := TStringList.Create;
+      Checksum.Append(MD5Print(MD5File(FileName)));
+      Checksum.SaveToFile(FileName + ChecksumFileExtension);
+    finally
+      Checksum.Free;
+    end;
+  end;
 end;
 
 procedure WriteMetaData(const FilesChunks: TFilesChunks; const BasePath: String; const Stream: TStream);
@@ -76,6 +114,36 @@ begin
   end;
 end;
 
+procedure CreateBundle(const FilesChunks: TFilesChunks; const BasePath: String; const FileName: String);
+var
+  Bundle: TStream;
+begin
+  if Assigned(FilesChunks) and (FileName.Length > 0) then
+  begin
+    try
+      Bundle := TFileStream.Create(FileName, fmCreate);
+      WriteMetaData(FilesChunks, BasePath, Bundle);
+      EncodeFilesChunks(FilesChunks, Bundle);
+    finally
+      Bundle.Free;
+    end;
+   end;
+end;
+
+procedure Process(const BasePath: String);
+var
+  FileList: TStrings;
+  FilesChunks: TFilesChunks;
+begin
+  FileList := GetFilteredFilesList(BasePath);
+  FilesChunks := ComputeChunkedFiles(FileList, ['.ini']);   
+  FileList.Free;
+
+  CreateBundle(FilesChunks, BasePath, BundleFileName);
+
+  CreateChecksumFileForFile(BundleFileName);
+end;
+
 type
   TProcessThread = class(TThread)
   private
@@ -95,62 +163,8 @@ begin
 end;
 
 procedure TProcessThread.Execute;
-var
-  FileList: TStrings;
-  ExcludedPaths: TStrings = nil;
-  FilesChunks: TFilesChunks;
-  Bundle: TStream;
-  FileMode: Int32;
-  Index: ValSInt;
-  Checksum: TStrings;
 begin
-  if DirectoryExists(FBasePath) then
-  begin
-    if FileExists(IgnoredPathsFileName) then
-    begin
-      ExcludedPaths := TStringList.Create;
-      try
-        ExcludedPaths.LoadFromFile(IgnoredPathsFileName);
-      finally
-      end;
-    end;
-
-    FileList := UFiles.FindRelevantFiles(FBasePath, ExcludedPaths);
-
-    if Assigned(ExcludedPaths) then
-      ExcludedPaths.Free;
-
-    FilesChunks := ComputeChunkedFiles(FileList, ['.ini']);
-    if FileExists(BundleFileName) then
-      FileMode := fmOpenWrite
-    else
-      FileMode := fmCreate;
-    try
-      Bundle := TFileStream.Create(BundleFileName, FileMode);
-      WriteMetaData(FilesChunks, FBasePath, Bundle);
-      EncodeFilesChunks(FilesChunks, Bundle);
-    finally
-      Bundle.Free;
-    end;
-
-    for Index := 0 to High(FilesChunks) do
-      SetLength(FilesChunks[Index], 0);
-    SetLength(FilesChunks, 0);
-
-    FileList.Free;
-
-    if FileExists(BundleFileName) then
-    begin
-      try
-        Checksum := TStringList.Create;
-        Checksum.Append(MD5Print(MD5File(BundleFileName)));
-        Checksum.SaveToFile(BundleFileName + BundleFileChecksumExtension);
-      finally
-        Checksum.Free;
-      end;
-    end;
-  end;
-
+  Process(FBasePath);
   FProcessResult.SetProcessingDone(True);
 end;
 

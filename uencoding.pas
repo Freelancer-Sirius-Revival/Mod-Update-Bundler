@@ -249,7 +249,6 @@ begin
     Encoders[Index].WaitFor;
     Encoders[Index].Free;
   end;
-  SetLength(Encoders, 0);
 
   // Wait for the output writer thread to have written every remaining piece of data before shutting it down.
   while OutputWriter.GetUnprocessedCount > 0 do
