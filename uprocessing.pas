@@ -22,7 +22,7 @@ uses
   Classes,
   SysUtils,
   UFiles,
-  UBundling,
+  UEncoding,
   md5;
 
 const
@@ -122,7 +122,7 @@ begin
     try
       Bundle := TFileStream.Create(BundleFileName, FileMode);
       WriteMetaData(FilesChunks, FBasePath, Bundle);
-      UBundling.BundleFiles(FilesChunks, Bundle);
+      EncodeFilesChunks(FilesChunks, Bundle);
     finally
       Bundle.Free;
     end;

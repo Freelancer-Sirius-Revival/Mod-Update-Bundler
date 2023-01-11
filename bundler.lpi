@@ -94,9 +94,9 @@
         <UnitName Value="UFiles"/>
       </Unit>
       <Unit>
-        <Filename Value="uencoding.pas"/>
+        <Filename Value="uencoder.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="UEncoding"/>
+        <UnitName Value="UEncoder"/>
       </Unit>
       <Unit>
         <Filename Value="LZMA.442b/compression/RangeCoder/UBitTreeEncoder.pas"/>
@@ -115,9 +115,9 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="ubundling.pas"/>
+        <Filename Value="uencoding.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="UBundling"/>
+        <UnitName Value="UEncoding"/>
       </Unit>
       <Unit>
         <Filename Value="LZMA.442b/compression/RangeCoder/URangeDecoder.pas"/>
