@@ -233,7 +233,6 @@ begin
   FilesChunksManager := TFilesChunksManager.Create(BasePath, FilesChunks);
 
   AccumulationThread := TAccumulationThread.Create(TargetStream);
-  AccumulationThread.FreeOnTerminate := True;
   AccumulationThread.Start;
 
   BundlingThreads := nil;
@@ -241,7 +240,6 @@ begin
   for Index := 0 to High(BundlingThreads) do
   begin
     BundlingThreads[Index] := TBundlingThread.Create(FilesChunksManager, AccumulationThread);
-    BundlingThreads[Index].FreeOnTerminate := True;
     // Let the games begin!
     BundlingThreads[Index].Start;
   end;
@@ -253,12 +251,20 @@ begin
       BundlersFinished := BundlersFinished and BundlingThreads[Index].Finished;
     Sleep(50);
   until BundlersFinished;
+
+  for Index := 0 to High(BundlingThreads) do
+  begin
+    BundlingThreads[Index].WaitFor;
+    BundlingThreads[Index].Free;
+  end;
   SetLength(BundlingThreads, 0);
 
   // Wait for the accumulation thread to have written every remaining piece of data before shutting it down.
   while AccumulationThread.GetUnprocessedCount > 0 do
     Sleep(50);
   AccumulationThread.Terminate;
+  AccumulationThread.WaitFor;
+  AccumulationThread.Free;
 
   FilesChunksManager.Free;
 end;
