@@ -87,7 +87,7 @@ begin
 
   // Magic number of file format.
   Stream.Read(MagicNumbers, SizeOf(FlsrFileMagicNumbers));
-  if (Length(MagicNumbers) = Length(FlsrFileMagicNumbers)) and (CompareByte(MagicNumbers, FlsrFileMagicNumbers, SizeOf(MagicNumbers)) = 0) then
+  if (Length(MagicNumbers) = Length(FlsrFileMagicNumbers)) and (CompareByte(MagicNumbers, FlsrFileMagicNumbers, SizeOf(MagicNumbers)) <> 0) then
     Exit;
 
   // Version of file format.
@@ -130,7 +130,7 @@ begin
 
   // Magic number of file format.
   Stream.Read(MagicNumbers, SizeOf(FlsrFileMagicNumbers));
-  if (Length(MagicNumbers) = Length(FlsrFileMagicNumbers)) and (CompareByte(MagicNumbers, FlsrFileMagicNumbers, SizeOf(MagicNumbers)) = 0) then
+  if (Length(MagicNumbers) = Length(FlsrFileMagicNumbers)) and (CompareByte(MagicNumbers, FlsrFileMagicNumbers, SizeOf(MagicNumbers)) <> 0) then
     Exit;
 
   // Version of file format.
@@ -148,7 +148,7 @@ begin
 
   // Magic number of file format.
   Stream.Read(MagicNumbers, SizeOf(FlsrFileMagicNumbers));
-  if (Length(MagicNumbers) = Length(FlsrFileMagicNumbers)) and (CompareByte(MagicNumbers, FlsrFileMagicNumbers, SizeOf(MagicNumbers)) = 0) then
+  if (Length(MagicNumbers) = Length(FlsrFileMagicNumbers)) and (CompareByte(MagicNumbers, FlsrFileMagicNumbers, SizeOf(MagicNumbers)) <> 0) then
     Exit;
 
   // Version of file format.
