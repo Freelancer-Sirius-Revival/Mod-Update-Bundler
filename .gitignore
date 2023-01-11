@@ -10,3 +10,5 @@ backup/
 lib/
 /debug-*
 /release-*
+ignoredPaths.txt
+*.flsr

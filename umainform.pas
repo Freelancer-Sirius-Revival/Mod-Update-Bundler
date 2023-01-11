@@ -5,19 +5,35 @@ unit UMainForm;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls;
+  Classes,
+  SysUtils,
+  Forms,
+  Controls,
+  Graphics,
+  Dialogs,
+  StdCtrls,
+  ExtCtrls,
+  ComCtrls,
+  UProcessing;
 
 type
   TMainForm = class(TForm)
     BeginBundlingButton: TButton;
+    ProcessRunningBar: TProgressBar;
     SelectInputPathButton: TButton;
     SelectInputPathEdit: TEdit;
     SelectInputPathDialog: TSelectDirectoryDialog;
+    ProcessTimer: TTimer;
     procedure BeginBundlingButtonClick(Sender: TObject);
+    procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+    procedure FormCreate(Sender: TObject);
+    procedure ProcessTimerTimer(Sender: TObject);
     procedure SelectInputPathButtonClick(Sender: TObject);
     procedure SelectInputPathEditChange(Sender: TObject);
   private
-
+  var
+    CurrentProcessResult: TProcessResult;
+    procedure DetermineBundlingButtonEnabled;
   public
 
   end;
@@ -29,58 +45,9 @@ implementation
 
 {$R *.lfm}
 
-uses
-  UFiles,
-  UBundling;
-
-const
-  IgnoredPathsFileName = 'ignoredPaths.txt';
-  BundleFileName = 'bundle.flsr';
-
-procedure ProcessBundling(const BasePath: String);
-var
-  FileList: TStrings;
-  ExcludedPaths: TStrings = nil;
-  FilesChunks: TFilesChunks;
-  Bundle: TStream;
-  FileMode: Int32;
-  Index: ValSInt;
+procedure TMainForm.FormCreate(Sender: TObject);
 begin
-  if DirectoryExists(BasePath) then
-  begin
-    if FileExists(IgnoredPathsFileName) then
-    begin
-      try
-        ExcludedPaths := TStringList.Create;
-        ExcludedPaths.LoadFromFile(IgnoredPathsFileName);
-      finally
-        FreeAndNil(ExcludedPaths);
-      end;
-    end;
-
-    FileList := UFiles.FindRelevantFiles(BasePath, ExcludedPaths);
-
-    if Assigned(ExcludedPaths) then
-      ExcludedPaths.Free;
-
-    FilesChunks := UFiles.ComputeChunkedFiles(FileList, ['.ini']);
-    if FileExists(BundleFileName) then
-      FileMode := fmOpenWrite
-    else
-      FileMode := fmCreate;
-    try
-      Bundle := TFileStream.Create(BundleFileName, FileMode);
-      UBundling.BundleFiles(FilesChunks, BasePath, Bundle);
-    finally
-      Bundle.Free;
-    end;
-
-    for Index := 0 to High(FilesChunks) do
-      SetLength(FilesChunks[Index], 0)
-    SetLength(FilesChunks, 0);
-
-    FileList.Free;
-  end;
+  CurrentProcessResult := nil;
 end;
 
 procedure TMainForm.SelectInputPathButtonClick(Sender: TObject);
@@ -93,16 +60,40 @@ begin
 end;
 
 procedure TMainForm.SelectInputPathEditChange(Sender: TObject);
+begin
+  DetermineBundlingButtonEnabled;
+end;
+
+procedure TMainForm.DetermineBundlingButtonEnabled;
 var
   Path: String;
 begin
   Path := SelectInputPathEdit.Text;
-  BeginBundlingButton.Enabled := not Path.Trim.IsEmpty;
+  BeginBundlingButton.Enabled := (not Path.Trim.IsEmpty) and (not Assigned(CurrentProcessResult) or CurrentProcessResult.ProcessingDone);
 end;
 
 procedure TMainForm.BeginBundlingButtonClick(Sender: TObject);
 begin
-  ProcessBundling(SelectInputPathEdit.Text);
+  CurrentProcessResult := ProcessBundling(SelectInputPathEdit.Text);
+  ProcessRunningBar.Enabled := True;
+  ProcessTimer.Enabled := True;
+  DetermineBundlingButtonEnabled;
+end;
+
+procedure TMainForm.ProcessTimerTimer(Sender: TObject);
+begin
+  if Assigned(CurrentProcessResult) and CurrentProcessResult.ProcessingDone then
+  begin
+    ProcessTimer.Enabled := False;
+    ProcessRunningBar.Enabled := False;
+    FreeAndNil(CurrentProcessResult);
+    DetermineBundlingButtonEnabled;
+  end;
+end;
+
+procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+begin
+  CanClose := not Assigned(CurrentProcessResult) or CurrentProcessResult.ProcessingDone;
 end;
 
 end.

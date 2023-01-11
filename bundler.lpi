@@ -127,6 +127,11 @@
         <Filename Value="LZMA.442b/compression/RangeCoder/URangeEncoder.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="uprocessing.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="UProcessing"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
