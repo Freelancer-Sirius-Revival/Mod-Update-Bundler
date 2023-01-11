@@ -28,6 +28,7 @@ uses
 const
   IgnoredPathsFileName = 'ignoredPaths.txt';
   BundleFileName = 'bundle.flsr';
+  BundleFileChecksumExtension = '.md5';
 
 function TProcessResult.GetProcessingDone: Boolean;
 begin
@@ -95,11 +96,12 @@ var
   Bundle: TStream;
   FileMode: Int32;
   Index: ValSInt;
+  Checksum: TStrings;
 begin
   if DirectoryExists(FBasePath) then
   begin
     if FileExists(IgnoredPathsFileName) then
-    begin       
+    begin
       ExcludedPaths := TStringList.Create;
       try
         ExcludedPaths.LoadFromFile(IgnoredPathsFileName);
@@ -130,6 +132,17 @@ begin
     SetLength(FilesChunks, 0);
 
     FileList.Free;
+
+    if FileExists(BundleFileName) then
+    begin
+      try
+        Checksum := TStringList.Create;
+        Checksum.Append(MD5Print(MD5File(BundleFileName)));
+        Checksum.SaveToFile(BundleFileName + BundleFileChecksumExtension);
+      finally
+        Checksum.Free;
+      end;
+    end;
   end;
 
   FProcessResult.SetProcessingDone(True);
