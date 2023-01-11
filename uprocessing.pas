@@ -24,6 +24,7 @@ uses
   UInputFiles,
   UEncoding,
   UBundle,
+  FileUtil,
   md5;
 
 const
@@ -93,18 +94,90 @@ begin
   end;
 end;
 
+type
+  TBundle = record
+    FileEntries: TFileEntries;
+    ContentVersion: Uint32;
+    BundleType: TBundleType
+  end;
+
+function GetBundleMetaData(const FileName: String): TBundle;
+var
+  Stream: TStream;
+begin
+  Result.BundleType := TUnknownBundle;
+  if FileExists(FileName) then
+  begin
+    try
+      Stream := TFileStream.Create(FileName, fmOpenRead);
+      Stream.Position := 0;
+      Result.ContentVersion := ReadContentVersion(Stream);
+      Stream.Position := 0;
+      Result.BundleType := ReadBundleType(Stream);
+      Stream.Position := 0;
+      Result.FileEntries := ReadFilesMetaData(Stream);
+    finally
+      Stream.Free;
+    end;
+  end;
+end;
+
+function RemoveEqualFileEntriesFromFilesChunks(const InputFileList: TStrings; const ExistingFileEntries: TFileEntries; const BasePath: String): TStrings;
+var
+  InputFileName: String;
+  OtherFileEntry: TFileEntry;
+begin
+  Result := TStringList.Create;
+  for InputFileName in InputFileList do
+    for OtherFileEntry in ExistingFileEntries do
+      // First it must be the same path name. After that the size is being compared directly. And then the MD5 checksum.
+      if (InputFileName.Remove(0, BasePath.Length).Trim.Replace('\', '/') = OtherFileEntry.Path) and
+        ((GetFileSize(InputFileName) <> OtherFileEntry.Size) or (CompareByte(MD5File(InputFileName), OtherFileEntry.Checksum, SizeOf(TMD5Digest)) <> 0)) then
+      begin
+        Result.Append(InputFileName);
+      end;
+end;
+
 procedure Process(const BasePath: String);
 var
-  FileList: TStrings;
-  FilesChunks: TFilesChunks;
+  CompleteFileList: TStrings;
+  CompleteFilesChunks: TFilesChunks;
+  PreviousFullBundleMetaData: TBundle;
+  NextContentVersion: Uint32 = 0;
+  UpdateFileList: TStrings = nil;
+  UpdateFilesChunks: TFilesChunks;
+  UpdateFileName: String;
 begin
-  FileList := GetFilteredFilesList(BasePath);
-  FilesChunks := ComputeChunkedFiles(FileList, ['.ini']);
-  FileList.Free;
+  CompleteFileList := GetFilteredFilesList(BasePath);
+  CompleteFilesChunks := ComputeChunkedFiles(CompleteFileList, ['.ini']);
 
-  CreateBundle(0, TFullBundle, FilesChunks, BasePath, FullBundleFileName + BundleFileExtension);
+  if FileExists(FullBundleFileName + BundleFileExtension) then
+  begin
+    PreviousFullBundleMetaData := GetBundleMetaData(FullBundleFileName + BundleFileExtension);
+    if PreviousFullBundleMetaData.BundleType = TFullBundle then
+    begin
+      UpdateFileList := RemoveEqualFileEntriesFromFilesChunks(CompleteFileList, PreviousFullBundleMetaData.FileEntries, BasePath);
+      if UpdateFileList.Count <> 0 then
+      begin                                                                       
+        NextContentVersion := PreviousFullBundleMetaData.ContentVersion + 1;
+        UpdateFilesChunks := ComputeChunkedFiles(UpdateFileList, ['.ini']);
+        UpdateFileName := UpdateBundleFileName + '.' + IntToStr(NextContentVersion) + BundleFileExtension;
+        CreateBundle(NextContentVersion, TUpdateBundle, UpdateFilesChunks, BasePath, UpdateFileName);
+        CreateChecksumFileForFile(UpdateFileName);
+      end;
+    end;
+  end;
 
-  CreateChecksumFileForFile(FullBundleFileName + BundleFileExtension);
+  // There must be either no previous bundle file, or at least one change since it.
+  if not Assigned(UpdateFileList) or (UpdateFileList.Count > 0) then
+  begin
+    CreateBundle(NextContentVersion, TFullBundle, CompleteFilesChunks, BasePath, FullBundleFileName + BundleFileExtension);
+    CreateChecksumFileForFile(FullBundleFileName + BundleFileExtension);
+  end;
+
+  CompleteFileList.Free;
+  if Assigned(UpdateFileList) then
+    UpdateFileList.Free;
 end;
 
 type

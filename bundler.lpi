@@ -89,9 +89,9 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="ufiles.pas"/>
+        <Filename Value="uinputfiles.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="UFiles"/>
+        <UnitName Value="UInputFiles"/>
       </Unit>
       <Unit>
         <Filename Value="uencoder.pas"/>

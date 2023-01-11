@@ -6,7 +6,7 @@ interface
 
 uses
   Classes,
-  UFiles;
+  UInputFiles;
 
 procedure EncodeFilesChunks(const FilesChunks: TFilesChunks; const TargetStream: TStream);
 

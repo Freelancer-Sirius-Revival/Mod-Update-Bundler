@@ -16,7 +16,8 @@ type
   TFilesChunks = array of TFileInfoArray;
 
 function FindRelevantFiles(const BasePath: String; const ExcludedPaths: TStrings): TStrings;
-function ComputeChunkedFiles(const FileList: TStrings; const SplittingFileExtensions: array of String): TFilesChunks;
+function ComputeChunkedFiles(const FileList: TStrings; const SplittingFileExtensions: array of String): TFilesChunks;    
+function GetFileSize(const FileName: String): Int64;
 
 implementation
 
@@ -49,7 +50,7 @@ begin
     end;
 end;
 
-function GetFileSize(FileName: String): Int64;
+function GetFileSize(const FileName: String): Int64;
 var
   Info: TSearchRec;
 begin
