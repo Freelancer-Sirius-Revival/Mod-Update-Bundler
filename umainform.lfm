@@ -100,9 +100,9 @@ object MainForm: TMainForm
     Anchors = [akTop, akLeft, akRight, akBottom]
     BorderSpacing.Left = 8
     BorderSpacing.Right = 8
-    Enabled = False
     Style = pbstMarquee
     TabOrder = 5
+    Visible = False
   end
   object SelectInputPathDialog: TSelectDirectoryDialog
     Title = 'Select Input Directory'

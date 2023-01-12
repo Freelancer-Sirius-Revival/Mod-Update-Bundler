@@ -100,7 +100,7 @@ end;
 procedure TMainForm.BeginBundlingButtonClick(Sender: TObject);
 begin
   CurrentProcessResult := ProcessBundling(SelectInputPathEdit.Text, SelectOutputPathEdit.Text);
-  ProcessRunningBar.Enabled := True;
+  ProcessRunningBar.Visible := True;
   ProcessTimer.Enabled := True;
   DetermineBundlingButtonEnabled;
 end;
@@ -110,7 +110,7 @@ begin
   if Assigned(CurrentProcessResult) and CurrentProcessResult.ProcessingDone then
   begin
     ProcessTimer.Enabled := False;
-    ProcessRunningBar.Enabled := False;
+    ProcessRunningBar.Visible := False;
     FreeAndNil(CurrentProcessResult);
     DetermineBundlingButtonEnabled;
   end;
