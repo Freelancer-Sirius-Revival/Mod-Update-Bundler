@@ -14,7 +14,7 @@ type
     property ProcessingDone: Boolean read GetProcessingDone write SetProcessingDone;
   end;
 
-function ProcessBundling(const BasePath: String): TProcessResult;
+function ProcessBundling(const InputPath: String; const OutputPath: String): TProcessResult;
 
 implementation
 
@@ -122,7 +122,7 @@ begin
   end;
 end;
 
-function RemoveEqualFileEntriesFromFilesChunks(const InputFileList: TStrings; const ExistingFileEntries: TFileEntries; const BasePath: String): TStrings;
+function RemoveEqualFileEntriesFromFilesChunks(const InputFileList: TStrings; const ExistingFileEntries: TFileEntries; const InputBasePath: String): TStrings;
 var
   InputFileName: String;
   OtherFileEntry: TFileEntry;
@@ -131,15 +131,16 @@ begin
   for InputFileName in InputFileList do
     for OtherFileEntry in ExistingFileEntries do
       // First it must be the same path name. After that the size is being compared directly. And then the MD5 checksum.
-      if (InputFileName.Remove(0, BasePath.Length).Trim.Replace('\', '/') = OtherFileEntry.Path) and
+      if (InputFileName.Remove(0, InputBasePath.Length).Trim.Replace('\', '/') = OtherFileEntry.Path) and
         ((GetFileSize(InputFileName) <> OtherFileEntry.Size) or (CompareByte(MD5File(InputFileName), OtherFileEntry.Checksum, SizeOf(TMD5Digest)) <> 0)) then
       begin
         Result.Append(InputFileName);
       end;
 end;
 
-procedure Process(const BasePath: String);
+procedure Process(const InputPath: String; OutputPath: String);
 var
+  CompleteBundlePath: String;
   CompleteFileList: TStrings;
   CompleteFilesChunks: TFilesChunks;
   PreviousFullBundleMetaData: TBundle;
@@ -148,21 +149,27 @@ var
   UpdateFilesChunks: TFilesChunks;
   UpdateFileName: String;
 begin
-  CompleteFileList := GetFilteredFilesList(BasePath);
+  OutputPath := OutputPath.Replace('\', '/');
+  if not OutputPath.EndsWith('/') then
+    OutputPath := OutputPath + '/';
+
+  CompleteBundlePath := OutputPath + FullBundleFileName + BundleFileExtension;
+
+  CompleteFileList := GetFilteredFilesList(InputPath);
   CompleteFilesChunks := ComputeChunkedFiles(CompleteFileList, ['.ini']);
 
-  if FileExists(FullBundleFileName + BundleFileExtension) then
+  if FileExists(CompleteBundlePath) then
   begin
-    PreviousFullBundleMetaData := GetBundleMetaData(FullBundleFileName + BundleFileExtension);
+    PreviousFullBundleMetaData := GetBundleMetaData(CompleteBundlePath);
     if PreviousFullBundleMetaData.BundleType = TFullBundle then
     begin
-      UpdateFileList := RemoveEqualFileEntriesFromFilesChunks(CompleteFileList, PreviousFullBundleMetaData.FileEntries, BasePath);
+      UpdateFileList := RemoveEqualFileEntriesFromFilesChunks(CompleteFileList, PreviousFullBundleMetaData.FileEntries, InputPath);
       if UpdateFileList.Count <> 0 then
-      begin                                                                       
+      begin
         NextContentVersion := PreviousFullBundleMetaData.ContentVersion + 1;
         UpdateFilesChunks := ComputeChunkedFiles(UpdateFileList, ['.ini']);
         UpdateFileName := UpdateBundleFileName + '.' + IntToStr(NextContentVersion) + BundleFileExtension;
-        CreateBundle(NextContentVersion, TUpdateBundle, UpdateFilesChunks, BasePath, UpdateFileName);
+        CreateBundle(NextContentVersion, TUpdateBundle, UpdateFilesChunks, InputPath, OutputPath + UpdateFileName);
         CreateChecksumFileForFile(UpdateFileName);
       end;
     end;
@@ -171,8 +178,8 @@ begin
   // There must be either no previous bundle file, or at least one change since it.
   if not Assigned(UpdateFileList) or (UpdateFileList.Count > 0) then
   begin
-    CreateBundle(NextContentVersion, TFullBundle, CompleteFilesChunks, BasePath, FullBundleFileName + BundleFileExtension);
-    CreateChecksumFileForFile(FullBundleFileName + BundleFileExtension);
+    CreateBundle(NextContentVersion, TFullBundle, CompleteFilesChunks, InputPath, CompleteBundlePath);
+    CreateChecksumFileForFile(CompleteBundlePath);
   end;
 
   CompleteFileList.Free;
@@ -183,34 +190,36 @@ end;
 type
   TProcessThread = class(TThread)
   private
-    FBasePath: String;
+    FInputPath: String;
+    FOutputPath: String;
     FProcessResult: TProcessResult;
   protected
     procedure Execute; override;
   public
-    constructor Create(const BasePath: String; const ProcessResult: TProcessResult);
+    constructor Create(const InputPath: String; const OutputPath: String; const ProcessResult: TProcessResult);
   end;
 
-constructor TProcessThread.Create(const BasePath: String; const ProcessResult: TProcessResult);
+constructor TProcessThread.Create(const InputPath: String; const OutputPath: String; const ProcessResult: TProcessResult);
 begin
   inherited Create(False);
-  FBasePath := BasePath;
+  FInputPath := InputPath;
+  FOutputPath := OutputPath;
   FProcessResult := ProcessResult;
 end;
 
 procedure TProcessThread.Execute;
 begin
-  Process(FBasePath);
+  Process(FInputPath, FOutputPath);
   FProcessResult.SetProcessingDone(True);
 end;
 
-function ProcessBundling(const BasePath: String): TProcessResult;
+function ProcessBundling(const InputPath: String; const OutputPath: String): TProcessResult;
 var
   ProcessThread: TProcessThread;
 begin
   Result := TProcessResult.Create;
   Result.SetProcessingDone(False);
-  ProcessThread := TProcessThread.Create(BasePath, Result);
+  ProcessThread := TProcessThread.Create(InputPath, OutputPath, Result);
   ProcessThread.FreeOnTerminate := True;
 end;
 

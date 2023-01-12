@@ -21,6 +21,9 @@ type
     BeginBundlingButton: TButton;
     ProcessRunningBar: TProgressBar;
     SelectInputPathButton: TButton;
+    SelectOutputPathDialog: TSelectDirectoryDialog;
+    SelectOutputPathEdit: TEdit;
+    SelectOutputPathButton: TButton;
     SelectInputPathEdit: TEdit;
     SelectInputPathDialog: TSelectDirectoryDialog;
     ProcessTimer: TTimer;
@@ -30,6 +33,8 @@ type
     procedure ProcessTimerTimer(Sender: TObject);
     procedure SelectInputPathButtonClick(Sender: TObject);
     procedure SelectInputPathEditChange(Sender: TObject);
+    procedure SelectOutputPathButtonClick(Sender: TObject);
+    procedure SelectOutputPathEditChange(Sender: TObject);
   private
   var
     CurrentProcessResult: TProcessResult;
@@ -50,12 +55,26 @@ begin
   CurrentProcessResult := nil;
 end;
 
+procedure TMainForm.DetermineBundlingButtonEnabled;
+var
+  InputPath: String;       
+  OutputPath: String;
+begin
+  InputPath := SelectInputPathEdit.Text;         
+  InputPath := InputPath.Trim;
+  OutputPath := SelectOutputPathEdit.Text;
+  OutputPath := OutputPath.Trim;
+  BeginBundlingButton.Enabled := (not InputPath.IsEmpty) and DirectoryExists(InputPath) and
+                                 (not OutputPath.IsEmpty) and DirectoryExists(OutputPath) and
+                                 (not Assigned(CurrentProcessResult) or CurrentProcessResult.ProcessingDone);
+end;
+
 procedure TMainForm.SelectInputPathButtonClick(Sender: TObject);
 begin
   if SelectInputPathDialog.Execute then
   begin
     SelectInputPathEdit.Text := SelectInputPathDialog.FileName;
-    BeginBundlingButton.Enabled := True;
+    DetermineBundlingButtonEnabled;
   end;
 end;
 
@@ -64,17 +83,23 @@ begin
   DetermineBundlingButtonEnabled;
 end;
 
-procedure TMainForm.DetermineBundlingButtonEnabled;
-var
-  Path: String;
+procedure TMainForm.SelectOutputPathButtonClick(Sender: TObject);
 begin
-  Path := SelectInputPathEdit.Text;
-  BeginBundlingButton.Enabled := (not Path.Trim.IsEmpty) and (not Assigned(CurrentProcessResult) or CurrentProcessResult.ProcessingDone);
+  if SelectOutputPathDialog.Execute then
+  begin
+    SelectOutputPathEdit.Text := SelectOutputPathDialog.FileName;
+    DetermineBundlingButtonEnabled;
+  end;
+end;
+
+procedure TMainForm.SelectOutputPathEditChange(Sender: TObject);
+begin
+  DetermineBundlingButtonEnabled;
 end;
 
 procedure TMainForm.BeginBundlingButtonClick(Sender: TObject);
 begin
-  CurrentProcessResult := ProcessBundling(SelectInputPathEdit.Text);
+  CurrentProcessResult := ProcessBundling(SelectInputPathEdit.Text, SelectOutputPathEdit.Text);
   ProcessRunningBar.Enabled := True;
   ProcessTimer.Enabled := True;
   DetermineBundlingButtonEnabled;

@@ -1,30 +1,61 @@
 object MainForm: TMainForm
-  Left = 682
-  Height = 240
-  Top = 381
-  Width = 320
+  Left = 128
+  Height = 152
+  Top = 128
+  Width = 502
   Caption = 'FL:SR Update Bundler'
-  ClientHeight = 240
-  ClientWidth = 320
+  ClientHeight = 152
+  ClientWidth = 502
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
-  Position = poDefault
+  Position = poDefaultPosOnly
   LCLVersion = '2.3.0.0'
+  object SelectOutputPathButton: TButton
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = SelectInputPathButton
+    AnchorSideTop.Side = asrBottom
+    Left = 8
+    Height = 32
+    Top = 56
+    Width = 176
+    BorderSpacing.Left = 8
+    BorderSpacing.Top = 16
+    Caption = 'Select Output Directory…'
+    OnClick = SelectOutputPathButtonClick
+    TabOrder = 2
+  end
+  object SelectOutputPathEdit: TEdit
+    AnchorSideLeft.Control = SelectOutputPathButton
+    AnchorSideLeft.Side = asrBottom
+    AnchorSideTop.Control = SelectOutputPathButton
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 192
+    Height = 32
+    Top = 56
+    Width = 302
+    Anchors = [akTop, akLeft, akRight]
+    AutoSelect = False
+    BorderSpacing.Left = 8
+    BorderSpacing.Right = 8
+    OnChange = SelectOutputPathEditChange
+    TabOrder = 3
+  end
   object SelectInputPathEdit: TEdit
     AnchorSideLeft.Control = SelectInputPathButton
     AnchorSideLeft.Side = asrBottom
     AnchorSideTop.Control = SelectInputPathButton
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    Left = 176
+    Left = 192
     Height = 32
     Top = 8
-    Width = 136
+    Width = 302
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Left = 8
     BorderSpacing.Right = 8
     OnChange = SelectInputPathEditChange
-    TabOrder = 0
+    TabOrder = 1
   end
   object SelectInputPathButton: TButton
     AnchorSideLeft.Control = Owner
@@ -32,22 +63,27 @@ object MainForm: TMainForm
     Left = 8
     Height = 32
     Top = 8
-    Width = 160
+    Width = 176
     BorderSpacing.Left = 8
     BorderSpacing.Top = 8
     Caption = 'Select Mod Directory…'
     OnClick = SelectInputPathButtonClick
-    TabOrder = 1
+    TabOrder = 0
   end
   object BeginBundlingButton: TButton
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = SelectOutputPathButton
+    AnchorSideTop.Side = asrBottom
     Left = 8
-    Height = 25
-    Top = 129
-    Width = 160
+    Height = 38
+    Top = 104
+    Width = 176
+    BorderSpacing.Left = 8
+    BorderSpacing.Top = 16
     Caption = 'Bundle Mod Files'
     Enabled = False
     OnClick = BeginBundlingButtonClick
-    TabOrder = 2
+    TabOrder = 4
   end
   object ProcessRunningBar: TProgressBar
     AnchorSideLeft.Control = BeginBundlingButton
@@ -57,18 +93,19 @@ object MainForm: TMainForm
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = BeginBundlingButton
     AnchorSideBottom.Side = asrBottom
-    Left = 176
-    Height = 25
-    Top = 129
-    Width = 136
+    Left = 192
+    Height = 38
+    Top = 104
+    Width = 302
     Anchors = [akTop, akLeft, akRight, akBottom]
     BorderSpacing.Left = 8
     BorderSpacing.Right = 8
     Enabled = False
     Style = pbstMarquee
-    TabOrder = 3
+    TabOrder = 5
   end
   object SelectInputPathDialog: TSelectDirectoryDialog
+    Title = 'Select Input Directory'
     Left = 144
     Top = 8
   end
@@ -78,5 +115,10 @@ object MainForm: TMainForm
     OnTimer = ProcessTimerTimer
     Left = 216
     Top = 152
+  end
+  object SelectOutputPathDialog: TSelectDirectoryDialog
+    Title = 'Select Output Directory'
+    Left = 144
+    Top = 56
   end
 end
