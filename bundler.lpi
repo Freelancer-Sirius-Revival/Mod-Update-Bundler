@@ -7,7 +7,7 @@
         <MainUnitHasUsesSectionForAllUnits Value="False"/>
       </Flags>
       <SessionStorage Value="InProjectDir"/>
-      <Title Value="FL:SR Update Bundler 2023.1"/>
+      <Title Value="FL:SR Update Bundler"/>
       <Scaled Value="True"/>
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>

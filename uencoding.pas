@@ -162,6 +162,9 @@ begin
     // Write ID of this chunk.
     TargetStream.WriteWord(FilesChunkId);
 
+    // Write size of encoded data.
+    TargetStream.WriteQWord(OutputStream.Size);
+
     // Copy encoded stream contents over.
     TargetStream.CopyFrom(OutputStream, 0);
   finally
