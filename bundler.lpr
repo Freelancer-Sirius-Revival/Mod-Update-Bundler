@@ -17,7 +17,7 @@ uses
 
 begin
   RequireDerivedFormResource := True;
-  Application.Title := 'FL:SR Update Bundler 2023.1';
+  Application.Title := 'FL:SR Update Bundler';
   Application.Scaled := True;
   Application.Initialize;
   Application.CreateForm(TMainForm, MainForm);

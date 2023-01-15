@@ -137,7 +137,7 @@ end;
 function EncodeFilesChunk(const FilesChunkId: Uint16; const FilesChunk: TFileInfoArray; const TargetStream: TStream): Boolean;
 var
   InputStream: TStream;
-  OutputStream: TStream;
+  EncodedStream: TStream;
   FileInfo: TFileInfo;
   FileStream: TStream;
 begin
@@ -158,22 +158,22 @@ begin
   try
     // Encode all file contents.
     InputStream.Position := 0;
-    OutputStream := TMemoryStream.Create;
-    if not Encode(InputStream, OutputStream) then
+    EncodedStream := TMemoryStream.Create;
+    if not Encode(InputStream, EncodedStream) then
       Exit;
 
     // Write ID of this chunk.
     TargetStream.WriteWord(FilesChunkId);
 
     // Write size of encoded data.
-    TargetStream.WriteQWord(OutputStream.Size);
+    TargetStream.WriteQWord(EncodedStream.Size);
 
     // Copy encoded stream contents over.
-    TargetStream.CopyFrom(OutputStream, 0);
+    TargetStream.CopyFrom(EncodedStream, 0);
     Result := True;
   finally
     InputStream.Free;
-    OutputStream.Free;
+    EncodedStream.Free;
   end;
 end;
 
