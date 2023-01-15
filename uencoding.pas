@@ -28,7 +28,7 @@ type
   public
     constructor Create(const FilesChunks: TFilesChunks);
     destructor Destroy; override;
-    procedure GetNextFilesChunk(out FilesChunkId: ValSInt; out FilesChunk: TFileInfoArray);
+    function GetNextFilesChunk(out FilesChunkId: ValSInt; out FilesChunk: TFileInfoArray): Boolean;
   end;
 
 constructor TFilesChunksManager.Create(const FilesChunks: TFilesChunks);
@@ -45,19 +45,19 @@ begin
   inherited Destroy;
 end;
 
-procedure TFilesChunksManager.GetNextFilesChunk(out FilesChunkId: ValSInt; out FilesChunk: TFileInfoArray);
+function TFilesChunksManager.GetNextFilesChunk(out FilesChunkId: ValSInt; out FilesChunk: TFileInfoArray): Boolean;
 begin
+  Result := False;
+  FilesChunkId := -1;
+  FilesChunk := nil;
+
   EnterCriticalSection(FCriticalSection);
   if FFilesChunkIndex < Length(FFilesChunks) then
   begin
     FilesChunkId := FFilesChunkIndex;
     FilesChunk := FFilesChunks[FFilesChunkIndex];
     Inc(FFilesChunkIndex);
-  end
-  else
-  begin
-    FilesChunkId := -1;
-    FilesChunk := nil;
+    Result := True;
   end;
   LeaveCriticalSection(FCriticalSection);
 end;
@@ -134,13 +134,15 @@ begin
   end;
 end;
 
-procedure EncodeFilesChunk(const FilesChunkId: UInt16; const FilesChunk: TFileInfoArray; const TargetStream: TStream);
+function EncodeFilesChunk(const FilesChunkId: Uint16; const FilesChunk: TFileInfoArray; const TargetStream: TStream): Boolean;
 var
   InputStream: TStream;
   OutputStream: TStream;
   FileInfo: TFileInfo;
   FileStream: TStream;
 begin
+  Result := False;
+
   // Read all file contents of this chunk.
   InputStream := TMemoryStream.Create;
   for FileInfo in FilesChunk do
@@ -157,7 +159,8 @@ begin
     // Encode all file contents.
     InputStream.Position := 0;
     OutputStream := TMemoryStream.Create;
-    UEncoder.Encode(InputStream, OutputStream);
+    if not Encode(InputStream, OutputStream) then
+      Exit;
 
     // Write ID of this chunk.
     TargetStream.WriteWord(FilesChunkId);
@@ -167,6 +170,7 @@ begin
 
     // Copy encoded stream contents over.
     TargetStream.CopyFrom(OutputStream, 0);
+    Result := True;
   finally
     InputStream.Free;
     OutputStream.Free;
@@ -203,16 +207,15 @@ begin
 
   while not Self.Terminated do
   begin
-    FChunksManager.GetNextFilesChunk(FilesChunkId, FilesChunk);
-    if (FilesChunkId < 0) or not Assigned(FilesChunk) then
+    if not FChunksManager.GetNextFilesChunk(FilesChunkId, FilesChunk) then
     begin
       Self.Terminate;
       Break;
     end;
 
     Stream := TMemoryStream.Create;
-    EncodeFilesChunk(FilesChunkId, FilesChunk, Stream);
-    FOutputWriterThread.AddDataToWrite(Stream);
+    if EncodeFilesChunk(FilesChunkId, FilesChunk, Stream) then
+      FOutputWriterThread.AddDataToWrite(Stream);
   end;
 end;
 

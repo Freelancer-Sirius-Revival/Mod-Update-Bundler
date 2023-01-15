@@ -7,7 +7,7 @@ interface
 uses
   Classes;
 
-procedure Encode(const InputStream, OutputStream: TStream);
+function Encode(const InputStream, OutputStream: TStream): Boolean;
 
 implementation
 
@@ -15,7 +15,7 @@ uses
   ULZMAEncoder,
   ULZMACommon;
 
-procedure Encode(const InputStream, OutputStream: TStream);
+function Encode(const InputStream, OutputStream: TStream): Boolean;
 const
  {set Match Finder. Default: bt4.
   Algorithms from hc* group doesn't provide good compression
@@ -69,6 +69,7 @@ var
   Encoder: TLZMAEncoder;
   Index: Uint8;
 begin
+  Result := False;
   try
     Encoder := TLZMAEncoder.Create;
     Encoder.SetDictionarySize(DictionarySize);
@@ -80,6 +81,7 @@ begin
     for Index := 0 to 7 do
       WriteByte(OutputStream, (InputStream.Size shr (8 * Index)) and $FF);
     Encoder.Code(InputStream, OutputStream, -1, -1);
+    Result := True;
   finally
     Encoder.Free;
   end;
