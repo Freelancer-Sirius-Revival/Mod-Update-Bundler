@@ -16,7 +16,11 @@ uses
   SysUtils,
   Math,
   Contnrs,
-  UEncoder;
+  UEncoder,
+  {$IFDEF UNIX}
+  UTF8Process
+  {$ENDIF}
+  ;
 
 type
   // This class contains all file chunks that will be processed by the bundler threads.
@@ -234,7 +238,7 @@ begin
   OutputWriter.Start;
 
   Encoders := nil;
-  SetLength(Encoders, Math.Min(GetCPUCount, Length(FilesChunks)));
+  SetLength(Encoders, Math.Min({$IFDEF UNIX}GetSystemThreadCount{$ELSE}GetCPUCount{$ENDIF} , Length(FilesChunks)));
   for Index := 0 to High(Encoders) do
   begin
     Encoders[Index] := TEncoderThread.Create(FilesChunksManager, OutputWriter);
