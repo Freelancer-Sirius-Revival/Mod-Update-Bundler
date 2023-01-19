@@ -8,7 +8,10 @@ uses
   Classes,
   UInputFiles;
 
-procedure EncodeFilesChunks(const FilesChunks: TFilesChunks; const TargetStream: TStream);
+type
+  TEncodingProgressCallback = procedure(const BytesWritten: Int64) of object;
+
+procedure EncodeFilesChunks(const FilesChunks: TFilesChunks; const TargetStream: TStream; const OnEncodingProgress: TEncodingProgressCallback);
 
 implementation
 
@@ -18,9 +21,9 @@ uses
   Contnrs,
   UEncoder,
   {$IFDEF UNIX}
-  UTF8Process
+  UTF8Process,
   {$ENDIF}
-  ;
+  ULZMACommon;
 
 type
   // This class contains all file chunks that will be processed by the bundler threads.
@@ -138,7 +141,7 @@ begin
   end;
 end;
 
-function EncodeFilesChunk(const FilesChunkId: Uint16; const FilesChunk: TFileInfoArray; const TargetStream: TStream): Boolean;
+function EncodeFilesChunk(const FilesChunkId: Uint16; const FilesChunk: TFileInfoArray; const TargetStream: TStream; const OnProgress: TLZMAProgress): Boolean;
 var
   InputStream: TStream;
   EncodedStream: TStream;
@@ -163,7 +166,7 @@ begin
     // Encode all file contents.
     InputStream.Position := 0;
     EncodedStream := TMemoryStream.Create;
-    if not Encode(InputStream, EncodedStream) then
+    if not Encode(InputStream, EncodedStream, OnProgress) then
       Exit;
 
     // Write ID of this chunk.
@@ -187,9 +190,13 @@ type
   private
     FChunksManager: TFilesChunksManager;
     FOutputWriterThread: TOutputWriterThread;
+    FPreviousProgressData: Int64;
+    FTotalBytesWritten: Int64;
+    procedure OnEncoderProcess(const Action: TLZMAProgressAction; const Value: Int64);
   protected
     procedure Execute; override;
   public
+    property TotalBytesWritten: Int64 read FTotalBytesWritten;
     constructor Create(const ChunksManager: TFilesChunksManager; const OutputWriterThread: TOutputWriterThread);
   end;
 
@@ -198,6 +205,16 @@ begin
   inherited Create(True);
   FChunksManager := ChunksManager;
   FOutputWriterThread := OutputWriterThread;
+  FTotalBytesWritten := 0;
+end;
+
+procedure TEncoderThread.OnEncoderProcess(const Action: TLZMAProgressAction; const Value: Int64);
+begin
+  if Action = LPAPos then
+  begin
+    InterlockedExchangeAdd64(FTotalBytesWritten, Value - FPreviousProgressData);
+    FPreviousProgressData := Value;
+  end;
 end;
 
 procedure TEncoderThread.Execute;
@@ -217,28 +234,33 @@ begin
       Break;
     end;
 
+    FPreviousProgressData := 0;
     Stream := TMemoryStream.Create;
-    if EncodeFilesChunk(FilesChunkId, FilesChunk, Stream) then
+    if EncodeFilesChunk(FilesChunkId, FilesChunk, Stream, @OnEncoderProcess) then
       FOutputWriterThread.AddDataToWrite(Stream);
   end;
 end;
 
-procedure EncodeFilesChunks(const FilesChunks: TFilesChunks; const TargetStream: TStream);
+procedure EncodeFilesChunks(const FilesChunks: TFilesChunks; const TargetStream: TStream; const OnEncodingProgress: TEncodingProgressCallback);
 var
   FilesChunksManager: TFilesChunksManager;
   OutputWriter: TOutputWriterThread;
   Encoders: array of TEncoderThread;
   Index: ValSInt;
   EncodersFinished: Boolean;
+  TotalBytesWritten: Int64;
 begin
   // Prepare all threads and file chunks.
   FilesChunksManager := TFilesChunksManager.Create(FilesChunks);
+
+  if Assigned(OnEncodingProgress) then
+    OnEncodingProgress(0);
 
   OutputWriter := TOutputWriterThread.Create(TargetStream);
   OutputWriter.Start;
 
   Encoders := nil;
-  SetLength(Encoders, Math.Min({$IFDEF UNIX}GetSystemThreadCount{$ELSE}GetCPUCount{$ENDIF} , Length(FilesChunks)));
+  SetLength(Encoders, Math.Min({$IFDEF UNIX}GetSystemThreadCount{$ELSE}GetCPUCount{$ENDIF}, Length(FilesChunks)));
   for Index := 0 to High(Encoders) do
   begin
     Encoders[Index] := TEncoderThread.Create(FilesChunksManager, OutputWriter);
@@ -248,9 +270,17 @@ begin
 
   // Wait for all encoder threads to finish work by polling every now and then.
   repeat
+    TotalBytesWritten := 0;
     EncodersFinished := True;
     for Index := 0 to High(Encoders) do
+    begin
+      TotalBytesWritten := TotalBytesWritten + Encoders[Index].TotalBytesWritten;
       EncodersFinished := EncodersFinished and Encoders[Index].Finished;
+    end;
+    
+    if Assigned(OnEncodingProgress) then
+      OnEncodingProgress(TotalBytesWritten);
+
     Sleep(50);
   until EncodersFinished;
 

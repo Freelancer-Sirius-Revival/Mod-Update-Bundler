@@ -5,16 +5,22 @@ unit UProcessing;
 interface
 
 type
-  TProcessResult = class
+  TProcessProgress = class
   private
-    FValue: Int64;
-    function GetProcessingDone: Boolean;
-    procedure SetProcessingDone(const NewProcessingDone: Boolean);
+    FTotalBytes: Int64;
+    FPercentage: Single;
+    FDone: Int32;
+    function GetDone: Boolean;
+    procedure SetDone(const Done: Boolean);
+    procedure SetPercentage(const NewPercentage: Single);
+    procedure OnEncodingProgress(const BytesWritten: Int64);
   public
-    property ProcessingDone: Boolean read GetProcessingDone write SetProcessingDone;
+    constructor Create;
+    property Percentage: Single read FPercentage write SetPercentage;
+    property Done: Boolean read GetDone write SetDone;
   end;
 
-function ProcessBundling(const InputPath: String; const OutputPath: String): TProcessResult;
+function ProcessBundling(const InputPath: String; const OutputPath: String): TProcessProgress;
 
 implementation
 
@@ -30,14 +36,32 @@ uses
 const
   IgnoredPathsFileName = 'ignoredPaths.txt';
 
-function TProcessResult.GetProcessingDone: Boolean;
+function TProcessProgress.GetDone: Boolean;
 begin
-  Result := Boolean(FValue);
+  Result := Boolean(FDone);
 end;
 
-procedure TProcessResult.SetProcessingDone(const NewProcessingDone: Boolean);
+procedure TProcessProgress.SetDone(const Done: Boolean);
 begin
-  InterlockedExchange64(FValue, Int64(NewProcessingDone));
+  InterlockedExchange(FDone, Int32(Done));
+end;
+
+procedure TProcessProgress.SetPercentage(const NewPercentage: Single);
+begin
+  InterlockedExchange(Int32(FPercentage), Int32(NewPercentage));
+end;
+
+procedure TProcessProgress.OnEncodingProgress(const BytesWritten: Int64);
+begin
+  SetPercentage(BytesWritten / FTotalBytes);
+end;
+
+constructor TProcessProgress.Create;
+begin
+  inherited Create;
+  FTotalBytes := 0;
+  FPercentage := 0;
+  Done := False;
 end;
 
 function GetFilteredFilesList(const BasePath: String): TStrings;
@@ -78,7 +102,7 @@ begin
   end;
 end;
 
-procedure CreateBundle(const ContentVersion: Uint32; const BundleType: TBundleType; const FilesChunks: TFilesChunks; const BasePath: String; const FileName: String);
+procedure CreateBundle(const ContentVersion: Uint32; const BundleType: TBundleType; const FilesChunks: TFilesChunks; const BasePath: String; const FileName: String; const OnEncodingProgress: TEncodingProgressCallback);
 var
   Bundle: TStream;
 begin
@@ -87,7 +111,7 @@ begin
     try
       Bundle := TFileStream.Create(FileName, fmCreate);
       WriteMetaData(ContentVersion, BundleType, FilesChunks, BasePath, Bundle);
-      EncodeFilesChunks(FilesChunks, Bundle);
+      EncodeFilesChunks(FilesChunks, Bundle, OnEncodingProgress);
     finally
       Bundle.Free;
     end;
@@ -138,7 +162,18 @@ begin
       end;
 end;
 
-procedure Process(const InputPath: String; OutputPath: String);
+function GetTotalSizeOfFiles(const FilesChunks: TFilesChunks): Int64;
+var
+  Files: TFileInfoArray;
+  FileEntry: TFileInfo;
+begin
+  Result := 0;
+  for Files in FilesChunks do
+    for FileEntry in Files do
+      Result := Result + FileEntry.Size;
+end;
+
+procedure Process(const InputPath: String; OutputPath: String; const ProcessProgress: TProcessProgress);
 var
   CompleteBundlePath: String;
   CompleteFileList: TStrings;
@@ -146,8 +181,9 @@ var
   PreviousFullBundleMetaData: TBundle;
   NextContentVersion: Uint32 = 0;
   UpdateFileList: TStrings = nil;
-  UpdateFilesChunks: TFilesChunks;
+  UpdateFilesChunks: TFilesChunks = nil;
   UpdateFileName: String;
+  TotalBytesToEncode: Int64 = 0;
 begin
   OutputPath := OutputPath.Replace('\', '/');
   if not OutputPath.EndsWith('/') then
@@ -158,27 +194,40 @@ begin
   CompleteFileList := GetFilteredFilesList(InputPath);
   CompleteFilesChunks := ComputeChunkedFiles(CompleteFileList, ['.ini']);
 
+  // Gather any updates files, if anything was there to update.
   if FileExists(CompleteBundlePath) then
   begin
     PreviousFullBundleMetaData := GetBundleMetaData(CompleteBundlePath);
     if PreviousFullBundleMetaData.BundleType = TFullBundle then
     begin
       UpdateFileList := RemoveEqualFileEntriesFromFilesChunks(CompleteFileList, PreviousFullBundleMetaData.FileEntries, InputPath);
-      if UpdateFileList.Count <> 0 then
+      if UpdateFileList.Count > 0 then
       begin
         NextContentVersion := PreviousFullBundleMetaData.ContentVersion + 1;
         UpdateFilesChunks := ComputeChunkedFiles(UpdateFileList, ['.ini']);
-        UpdateFileName := UpdateBundleFileName + '.' + IntToStr(NextContentVersion) + BundleFileExtension;
-        CreateBundle(NextContentVersion, TUpdateBundle, UpdateFilesChunks, InputPath, OutputPath + UpdateFileName);
-        CreateChecksumFileForFile(UpdateFileName);
       end;
     end;
   end;
 
-  // There must be either no previous bundle file, or at least one change since it.
+  // Get the total amount of bytes to write.
+  if Length(UpdateFilesChunks) > 0 then
+    TotalBytesToEncode := TotalBytesToEncode + GetTotalSizeOfFiles(UpdateFilesChunks);
+  if not Assigned(UpdateFileList) or (UpdateFileList.Count > 0) then
+    TotalBytesToEncode := TotalBytesToEncode + GetTotalSizeOfFiles(CompleteFilesChunks);
+  ProcessProgress.FTotalBytes := TotalBytesToEncode;
+
+  // Write the update file if there is anything to update.
+  if Length(UpdateFilesChunks) > 0 then
+  begin
+    UpdateFileName := UpdateBundleFileName + '.' + IntToStr(NextContentVersion) + BundleFileExtension;
+    CreateBundle(NextContentVersion, TUpdateBundle, UpdateFilesChunks, InputPath, OutputPath + UpdateFileName, @ProcessProgress.OnEncodingProgress);
+    CreateChecksumFileForFile(UpdateFileName);
+  end;
+
+  // Create the complete mod file if there was none before or at least one change happened since.
   if not Assigned(UpdateFileList) or (UpdateFileList.Count > 0) then
   begin
-    CreateBundle(NextContentVersion, TFullBundle, CompleteFilesChunks, InputPath, CompleteBundlePath);
+    CreateBundle(NextContentVersion, TFullBundle, CompleteFilesChunks, InputPath, CompleteBundlePath, @ProcessProgress.OnEncodingProgress);
     CreateChecksumFileForFile(CompleteBundlePath);
   end;
 
@@ -192,33 +241,32 @@ type
   private
     FInputPath: String;
     FOutputPath: String;
-    FProcessResult: TProcessResult;
+    FProcessProgress: TProcessProgress;
   protected
     procedure Execute; override;
   public
-    constructor Create(const InputPath: String; const OutputPath: String; const ProcessResult: TProcessResult);
+    constructor Create(const InputPath: String; const OutputPath: String; const ProcessResult: TProcessProgress);
   end;
 
-constructor TProcessThread.Create(const InputPath: String; const OutputPath: String; const ProcessResult: TProcessResult);
+constructor TProcessThread.Create(const InputPath: String; const OutputPath: String; const ProcessResult: TProcessProgress);
 begin
   inherited Create(False);
   FInputPath := InputPath;
   FOutputPath := OutputPath;
-  FProcessResult := ProcessResult;
+  FProcessProgress := ProcessResult;
 end;
 
 procedure TProcessThread.Execute;
 begin
-  Process(FInputPath, FOutputPath);
-  FProcessResult.SetProcessingDone(True);
+  Process(FInputPath, FOutputPath, FProcessProgress);
+  FProcessProgress.Done := True;
 end;
 
-function ProcessBundling(const InputPath: String; const OutputPath: String): TProcessResult;
+function ProcessBundling(const InputPath: String; const OutputPath: String): TProcessProgress;
 var
   ProcessThread: TProcessThread;
 begin
-  Result := TProcessResult.Create;
-  Result.SetProcessingDone(False);
+  Result := TProcessProgress.Create;
   ProcessThread := TProcessThread.Create(InputPath, OutputPath, Result);
   ProcessThread.FreeOnTerminate := True;
 end;

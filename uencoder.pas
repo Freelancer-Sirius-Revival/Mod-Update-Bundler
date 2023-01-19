@@ -5,17 +5,17 @@ unit UEncoder;
 interface
 
 uses
-  Classes;
+  Classes,
+  ULZMACommon;
 
-function Encode(const InputStream, OutputStream: TStream): Boolean;
+function Encode(const InputStream, OutputStream: TStream; const OnProgress: TLZMAProgress): Boolean;
 
 implementation
 
 uses
-  ULZMAEncoder,
-  ULZMACommon;
+  ULZMAEncoder;
 
-function Encode(const InputStream, OutputStream: TStream): Boolean;
+function Encode(const InputStream, OutputStream: TStream; const OnProgress: TLZMAProgress): Boolean;
 const
  {set Match Finder. Default: bt4.
   Algorithms from hc* group doesn't provide good compression
@@ -72,6 +72,7 @@ begin
   Result := False;
   try
     Encoder := TLZMAEncoder.Create;
+    Encoder.OnProgress := OnProgress;
     Encoder.SetDictionarySize(DictionarySize);
     Encoder.SeNumFastBytes(FastBytes);
     Encoder.SetMatchFinder(MatchFinder);

@@ -57,6 +57,21 @@ object MainForm: TMainForm
     OnChange = SelectInputPathEditChange
     TabOrder = 1
   end
+  object ProcessRunningLabel: TLabel
+    AnchorSideLeft.Control = ProcessRunningBar
+    AnchorSideLeft.Side = asrCenter
+    AnchorSideBottom.Control = BeginBundlingButton
+    AnchorSideBottom.Side = asrBottom
+    Left = 277
+    Height = 18
+    Top = 124
+    Width = 132
+    Alignment = taRightJustify
+    Anchors = [akLeft, akBottom]
+    Caption = 'ProcessRunningLabel'
+    ParentBidiMode = False
+    Visible = False
+  end
   object SelectInputPathButton: TButton
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = Owner
@@ -91,16 +106,15 @@ object MainForm: TMainForm
     AnchorSideTop.Control = BeginBundlingButton
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = BeginBundlingButton
-    AnchorSideBottom.Side = asrBottom
+    AnchorSideBottom.Control = ProcessRunningLabel
     Left = 192
-    Height = 38
+    Height = 20
     Top = 104
     Width = 302
     Anchors = [akTop, akLeft, akRight, akBottom]
     BorderSpacing.Left = 8
     BorderSpacing.Right = 8
-    Style = pbstMarquee
+    Max = 1000
     TabOrder = 5
     Visible = False
   end

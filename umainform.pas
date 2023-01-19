@@ -19,6 +19,7 @@ uses
 type
   TMainForm = class(TForm)
     BeginBundlingButton: TButton;
+    ProcessRunningLabel: TLabel;
     ProcessRunningBar: TProgressBar;
     SelectInputPathButton: TButton;
     SelectOutputPathDialog: TSelectDirectoryDialog;
@@ -37,7 +38,7 @@ type
     procedure SelectOutputPathEditChange(Sender: TObject);
   private
   var
-    CurrentProcessResult: TProcessResult;
+    CurrentProcessResult: TProcessProgress;
     procedure DetermineBundlingButtonEnabled;
   public
 
@@ -50,6 +51,9 @@ implementation
 
 {$R *.lfm}
 
+uses
+  Math;
+
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
   CurrentProcessResult := nil;
@@ -57,16 +61,16 @@ end;
 
 procedure TMainForm.DetermineBundlingButtonEnabled;
 var
-  InputPath: String;       
+  InputPath: String;
   OutputPath: String;
 begin
-  InputPath := SelectInputPathEdit.Text;         
+  InputPath := SelectInputPathEdit.Text;
   InputPath := InputPath.Trim;
   OutputPath := SelectOutputPathEdit.Text;
   OutputPath := OutputPath.Trim;
   BeginBundlingButton.Enabled := (not InputPath.IsEmpty) and DirectoryExists(InputPath) and
-                                 (not OutputPath.IsEmpty) and DirectoryExists(OutputPath) and
-                                 (not Assigned(CurrentProcessResult) or CurrentProcessResult.ProcessingDone);
+    (not OutputPath.IsEmpty) and DirectoryExists(OutputPath) and
+    (not Assigned(CurrentProcessResult) or CurrentProcessResult.Done);
 end;
 
 procedure TMainForm.SelectInputPathButtonClick(Sender: TObject);
@@ -101,24 +105,36 @@ procedure TMainForm.BeginBundlingButtonClick(Sender: TObject);
 begin
   CurrentProcessResult := ProcessBundling(SelectInputPathEdit.Text, SelectOutputPathEdit.Text);
   ProcessRunningBar.Visible := True;
+  ProcessRunningBar.Position := 0;
+  ProcessRunningLabel.Visible := True;
+  ProcessRunningLabel.Caption := '0%';
   ProcessTimer.Enabled := True;
   DetermineBundlingButtonEnabled;
 end;
 
 procedure TMainForm.ProcessTimerTimer(Sender: TObject);
 begin
-  if Assigned(CurrentProcessResult) and CurrentProcessResult.ProcessingDone then
+  if Assigned(CurrentProcessResult) then
   begin
-    ProcessTimer.Enabled := False;
-    ProcessRunningBar.Visible := False;
-    FreeAndNil(CurrentProcessResult);
-    DetermineBundlingButtonEnabled;
+    if CurrentProcessResult.Done then
+    begin
+      ProcessTimer.Enabled := False;
+      ProcessRunningBar.Visible := False;
+      ProcessRunningLabel.Visible := False;
+      FreeAndNil(CurrentProcessResult);
+      DetermineBundlingButtonEnabled;
+    end
+    else
+    begin
+      ProcessRunningBar.Position := Math.Ceil(CurrentProcessResult.Percentage * 1000);
+      ProcessRunningLabel.Caption := Math.Ceil(CurrentProcessResult.Percentage * 100).ToString + '%';
+    end;
   end;
 end;
 
 procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
-  CanClose := not Assigned(CurrentProcessResult) or CurrentProcessResult.ProcessingDone;
+  CanClose := not Assigned(CurrentProcessResult) or CurrentProcessResult.Done;
 end;
 
 end.
