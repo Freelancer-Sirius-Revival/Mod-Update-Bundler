@@ -35,6 +35,7 @@ uses
 
 const
   IgnoredPathsFileName = 'ignoredPaths.txt';
+  ChunkedFileExtensions: array [0..7] of String = ('.ini', '.thn', '.wav', '.utf', '.bmp', '.tga', '.mat', '.txm');
 
 function TProcessProgress.GetDone: Boolean;
 begin
@@ -192,7 +193,7 @@ begin
   CompleteBundlePath := OutputPath + FullBundleFileName + BundleFileExtension;
 
   CompleteFileList := GetFilteredFilesList(InputPath);
-  CompleteFilesChunks := ComputeChunkedFiles(CompleteFileList, ['.ini']);
+  CompleteFilesChunks := ComputeChunkedFiles(CompleteFileList, ChunkedFileExtensions);
 
   // Gather any updates files, if anything was there to update.
   if FileExists(CompleteBundlePath) then
@@ -204,7 +205,7 @@ begin
       if UpdateFileList.Count > 0 then
       begin
         NextContentVersion := PreviousFullBundleMetaData.ContentVersion + 1;
-        UpdateFilesChunks := ComputeChunkedFiles(UpdateFileList, ['.ini']);
+        UpdateFilesChunks := ComputeChunkedFiles(UpdateFileList, ChunkedFileExtensions);
       end;
     end;
   end;
