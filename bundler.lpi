@@ -217,6 +217,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="UBundle"/>
       </Unit>
+      <Unit>
+        <Filename Value="umeta.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="UMeta"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

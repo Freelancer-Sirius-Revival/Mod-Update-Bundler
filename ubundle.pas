@@ -15,7 +15,6 @@ const
   FullBundleFileName = 'main';
   UpdateBundleFileName = 'update';
   BundleFileExtension = '.flsr';
-  ChecksumFileExtension = '.md5';
 
 type
   TFileEntry = record

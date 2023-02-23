@@ -4,6 +4,9 @@ unit UProcessing;
 
 interface
 
+const
+  ChecksumFileExtension = '.md5';
+
 type
   TProcessProgress = class
   private
@@ -30,6 +33,7 @@ uses
   UInputFiles,
   UEncoding,
   UBundle,
+  UMeta,
   FileUtil,
   md5;
 
@@ -222,6 +226,7 @@ begin
   begin
     UpdateFileName := UpdateBundleFileName + '.' + IntToStr(NextContentVersion) + BundleFileExtension;
     CreateBundle(NextContentVersion, TUpdateBundle, UpdateFilesChunks, InputPath, OutputPath + UpdateFileName, @ProcessProgress.OnEncodingProgress);
+    CreateMetaFileForFile(UpdateFileName);
     CreateChecksumFileForFile(UpdateFileName);
   end;
 
@@ -229,6 +234,7 @@ begin
   if not Assigned(UpdateFileList) or (UpdateFileList.Count > 0) then
   begin
     CreateBundle(NextContentVersion, TFullBundle, CompleteFilesChunks, InputPath, CompleteBundlePath, @ProcessProgress.OnEncodingProgress);
+    CreateMetaFileForFile(CompleteBundlePath);
     CreateChecksumFileForFile(CompleteBundlePath);
   end;
 
