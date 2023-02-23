@@ -31,7 +31,7 @@ var
   LoweredExcludedPath: String;
   Index: ValSInt;
 begin
-  Result := FindAllFiles(BasePath, AllFilesMask, True);
+  Result := FindAllFiles(BasePath, AllFilesMask, True, faDirectory or faHidden or faReadOnly);
   if Assigned(ExcludedPaths) then
     for ExcludedPath in ExcludedPaths do
     begin
@@ -75,7 +75,7 @@ begin
   SetLength(Result, Length(Extensions) + 1);
   for ExtensionIndex := 0 to High(Result) do
     Result[ExtensionIndex] := TStringList.Create;
-  // Split files by Ini or non-ini (mostly UTF files and other binaries).
+
   for FilePath in FileList do
   begin
     LoweredFilePath := FilePath.ToLower;
