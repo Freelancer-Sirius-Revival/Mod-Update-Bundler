@@ -43,16 +43,12 @@ var
 begin
   // Magic number of file format.
   Stream.Write(FlsrFileMagicNumbers, SizeOf(FlsrFileMagicNumbers));
-
   // Version of file format.
   Stream.WriteByte(FlsrFileVersion);
-
   // Version of file contents.
   Stream.WriteDWord(ContentVersion);
-
   // Bundle type.
   Stream.WriteByte(Ord(BundleType));
-
   // Count of Chunks.
   Stream.WriteWord(Length(FilesChunks));
 

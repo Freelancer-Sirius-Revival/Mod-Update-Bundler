@@ -25,7 +25,6 @@ var
   BundleType: TBundleType;
   FileEntries: TFileEntries;
   FileEntry: TFileEntry;
-  AllFilesSize: Int64;
   MetaStream: TMemoryStream;
 begin
   if FileExists(FileName) then
@@ -47,20 +46,24 @@ begin
       BundleStream.Free;
     end;
 
-    AllFilesSize := 0;
-    for FileEntry in FileEntries do
-      AllFilesSize := AllFilesSize + FileEntry.Size;
-
     try
       MetaStream := TMemoryStream.Create;
-      MetaStream.WriteByte(Ord(BundleType));
+      // Version of file contents.
       MetaStream.WriteDWord(ContentVersion);
+      // Bundle type.
+      MetaStream.WriteByte(Ord(BundleType));
+      // Total size of the compressed bundle.
       MetaStream.WriteQWord(BundleFileSize);
-      MetaStream.WriteQWord(AllFilesSize);
+      // Count of files in this bundle.
       MetaStream.WriteDWord(Length(FileEntries));
+
       for FileEntry in FileEntries do
-      begin
+      begin                       
+        // First write a normalized relative path of the file.
         MetaStream.WriteAnsiString(FileEntry.Path);
+        // Second write the uncompressed size of the file.
+        MetaStream.WriteQWord(FileEntry.Size);
+        // Third write an MD5 hash of the file's contents.
         MetaStream.Write(FileEntry.Checksum, SizeOf(TMD5Digest));
       end;
       MetaStream.SaveToFile(FileName + MetaFileExtension);
