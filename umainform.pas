@@ -57,6 +57,13 @@ uses
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
   CurrentProcessResult := nil;
+  if Application.HasOption('i', 'input') and DirectoryExists(Application.GetOptionValue('i', 'input')) then
+    SelectInputPathEdit.Text := Application.GetOptionValue('i', 'input');
+  if Application.HasOption('o', 'output') and DirectoryExists(Application.GetOptionValue('o', 'output')) then
+    SelectOutputPathEdit.Text := Application.GetOptionValue('o', 'output');
+  DetermineBundlingButtonEnabled;
+  if Application.HasOption('a', 'auto') and BeginBundlingButton.Enabled then
+    BeginBundlingButtonClick(Sender);
 end;
 
 procedure TMainForm.DetermineBundlingButtonEnabled;
@@ -69,8 +76,8 @@ begin
   OutputPath := SelectOutputPathEdit.Text;
   OutputPath := OutputPath.Trim;
   BeginBundlingButton.Enabled := (not InputPath.IsEmpty) and DirectoryExists(InputPath) and
-    (not OutputPath.IsEmpty) and DirectoryExists(OutputPath) and
-    (not Assigned(CurrentProcessResult) or CurrentProcessResult.Done);
+                                 (not OutputPath.IsEmpty) and DirectoryExists(OutputPath) and
+                                 (not Assigned(CurrentProcessResult) or CurrentProcessResult.Done);
 end;
 
 procedure TMainForm.SelectInputPathButtonClick(Sender: TObject);

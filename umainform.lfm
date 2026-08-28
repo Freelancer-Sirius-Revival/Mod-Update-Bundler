@@ -9,7 +9,7 @@ object MainForm: TMainForm
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   Position = poDefaultPosOnly
-  LCLVersion = '2.3.0.0'
+  LCLVersion = '3.4.0.0'
   object SelectOutputPathButton: TButton
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = SelectInputPathButton
@@ -21,8 +21,8 @@ object MainForm: TMainForm
     BorderSpacing.Left = 8
     BorderSpacing.Top = 16
     Caption = 'Select Output Directory…'
-    OnClick = SelectOutputPathButtonClick
     TabOrder = 2
+    OnClick = SelectOutputPathButtonClick
   end
   object SelectOutputPathEdit: TEdit
     AnchorSideLeft.Control = SelectOutputPathButton
@@ -38,8 +38,8 @@ object MainForm: TMainForm
     AutoSelect = False
     BorderSpacing.Left = 8
     BorderSpacing.Right = 8
-    OnChange = SelectOutputPathEditChange
     TabOrder = 3
+    OnChange = SelectOutputPathEditChange
   end
   object SelectInputPathEdit: TEdit
     AnchorSideLeft.Control = SelectInputPathButton
@@ -54,8 +54,8 @@ object MainForm: TMainForm
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Left = 8
     BorderSpacing.Right = 8
-    OnChange = SelectInputPathEditChange
     TabOrder = 1
+    OnChange = SelectInputPathEditChange
   end
   object ProcessRunningLabel: TLabel
     AnchorSideLeft.Control = ProcessRunningBar
@@ -82,8 +82,8 @@ object MainForm: TMainForm
     BorderSpacing.Left = 8
     BorderSpacing.Top = 8
     Caption = 'Select Mod Directory…'
-    OnClick = SelectInputPathButtonClick
     TabOrder = 0
+    OnClick = SelectInputPathButtonClick
   end
   object BeginBundlingButton: TButton
     AnchorSideLeft.Control = Owner
@@ -97,8 +97,8 @@ object MainForm: TMainForm
     BorderSpacing.Top = 16
     Caption = 'Bundle Mod Files'
     Enabled = False
-    OnClick = BeginBundlingButtonClick
     TabOrder = 4
+    OnClick = BeginBundlingButtonClick
   end
   object ProcessRunningBar: TProgressBar
     AnchorSideLeft.Control = BeginBundlingButton
