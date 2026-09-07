@@ -12,7 +12,7 @@ uses
 const
   FlsrFileVersion = 1;
   FlsrFileMagicNumbers = 'FLSR';
-  FullBundleFileName = 'main';
+  FullBundleFileName = 'release';
   UpdateBundleFileName = 'update';
   BundleFileExtension = '.flsr';
 
