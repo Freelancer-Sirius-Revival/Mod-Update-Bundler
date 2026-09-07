@@ -52,6 +52,8 @@ begin
       MetaStream.WriteDWord(ContentVersion);
       // Bundle type.
       MetaStream.WriteByte(Ord(BundleType));
+      // Bundle content checksum.
+      MetaStream.Write(MD5File(FileName), SizeOf(TMD5Digest));
       // Total size of the compressed bundle.
       MetaStream.WriteQWord(BundleFileSize);
       // Count of files in this bundle.

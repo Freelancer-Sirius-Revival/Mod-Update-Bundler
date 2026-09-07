@@ -4,9 +4,6 @@ unit UProcessing;
 
 interface
 
-const
-  ChecksumFileExtension = '.md5';
-
 type
   TProcessProgress = class
   private
@@ -67,22 +64,6 @@ begin
   FTotalBytes := 0;
   FPercentage := 0;
   Done := False;
-end;
-
-procedure CreateChecksumFileForFile(const FileName: String);
-var
-  Checksum: TStrings;
-begin
-  if FileExists(FileName) then
-  begin
-    try
-      Checksum := TStringList.Create;
-      Checksum.Append(MD5Print(MD5File(FileName)));
-      Checksum.SaveToFile(FileName + ChecksumFileExtension);
-    finally
-      Checksum.Free;
-    end;
-  end;
 end;
 
 procedure CreateBundle(const ContentVersion: Uint32; const BundleType: TBundleType; const FilesChunks: TFilesChunks; const BasePath: String; const FileName: String; const OnEncodingProgress: TEncodingProgressCallback);
@@ -203,7 +184,6 @@ begin
     UpdateFileName := UpdateBundleFileName + '.' + IntToStr(NextContentVersion) + BundleFileExtension;
     CreateBundle(NextContentVersion, TUpdateBundle, UpdateFilesChunks, InputPath, OutputPath + UpdateFileName, @ProcessProgress.OnEncodingProgress);
     CreateMetaFileForFile(UpdateFileName);
-    CreateChecksumFileForFile(UpdateFileName);
   end;
 
   // Create the complete mod file if there was none before or at least one change happened since.
@@ -211,7 +191,6 @@ begin
   begin
     CreateBundle(NextContentVersion, TFullBundle, CompleteFilesChunks, InputPath, CompleteBundlePath, @ProcessProgress.OnEncodingProgress);
     CreateMetaFileForFile(CompleteBundlePath);
-    CreateChecksumFileForFile(CompleteBundlePath);
   end;
 
   CompleteFileList.Free;
