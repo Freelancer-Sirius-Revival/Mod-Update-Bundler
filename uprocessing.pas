@@ -168,15 +168,13 @@ var
   UpdateFileName: String;
   TotalBytesToEncode: Int64 = 0;
 begin
-  OutputPath := OutputPath.Replace('\', '/', [ rfReplaceAll ]);
-  if not OutputPath.EndsWith('/') then
-    OutputPath := OutputPath + '/';
-
-  CompleteBundlePath := OutputPath + FullBundleFileName + BundleFileExtension;
-
   CompleteFileList := FindAllFiles(InputPath, AllFilesMask, True, faDirectory or faHidden or faReadOnly);
   CompleteFilesChunks := ComputeChunkedFiles(CompleteFileList, ChunkedFileExtensions);
-
+                          
+  OutputPath := OutputPath.Trim.Replace('\', '/', [ rfReplaceAll ]);
+  if not OutputPath.EndsWith('/') then
+    OutputPath := OutputPath + '/';
+  CompleteBundlePath := OutputPath + FullBundleFileName + BundleFileExtension;
   // Gather any updates files, if anything was there to update.
   if FileExists(CompleteBundlePath) then
   begin

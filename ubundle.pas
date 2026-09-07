@@ -26,7 +26,7 @@ type
 
   TBundleType = (TFullBundle = 0, TUpdateBundle = 1, TUnknownBundle = 255);
 
-procedure WriteMetaData(const ContentVersion: Uint32; const BundleType: TBundleType; const FilesChunks: TFilesChunks; const BasePath: String; const Stream: TStream);
+procedure WriteMetaData(const ContentVersion: Uint32; const BundleType: TBundleType; const FilesChunks: TFilesChunks; BasePath: String; const Stream: TStream);
 function ReadFilesMetaData(const Stream: TStream): TFileEntries;
 function ReadContentVersion(const Stream: TStream): Uint32;
 function ReadBundleType(const Stream: TStream): TBundleType;
@@ -36,7 +36,7 @@ implementation
 uses
   SysUtils;
 
-procedure WriteMetaData(const ContentVersion: Uint32; const BundleType: TBundleType; const FilesChunks: TFilesChunks; const BasePath: String; const Stream: TStream);
+procedure WriteMetaData(const ContentVersion: Uint32; const BundleType: TBundleType; const FilesChunks: TFilesChunks; BasePath: String; const Stream: TStream);
 var
   FilesChunk: TFileInfoArray;
   ChunkFile: TFileInfo;
@@ -51,6 +51,9 @@ begin
   Stream.WriteByte(Ord(BundleType));
   // Count of Chunks.
   Stream.WriteWord(Length(FilesChunks));
+
+  // Normalize base path to not contain any leading slash.
+  BasePath := BasePath.TrimRight('/').TrimRight('\');
 
   for FilesChunk in FilesChunks do
   begin
