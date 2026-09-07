@@ -160,7 +160,7 @@ begin
   for InputFileName in InputFileList do
     for OtherFileEntry in ExistingFileEntries do
       // First it must be the same path name. After that the size is being compared directly. And then the MD5 checksum.
-      if (InputFileName.Remove(0, InputBasePath.Length).Trim.Replace('\', '/') = OtherFileEntry.Path) and
+      if (InputFileName.Remove(0, InputBasePath.Length).Trim.Replace('\', '/', [ rfReplaceAll ]) = OtherFileEntry.Path) and
         ((GetFileSize(InputFileName) <> OtherFileEntry.Size) or (CompareByte(MD5File(InputFileName), OtherFileEntry.Checksum, SizeOf(TMD5Digest)) <> 0)) then
       begin
         Result.Append(InputFileName);
@@ -190,7 +190,7 @@ var
   UpdateFileName: String;
   TotalBytesToEncode: Int64 = 0;
 begin
-  OutputPath := OutputPath.Replace('\', '/');
+  OutputPath := OutputPath.Replace('\', '/', [ rfReplaceAll ]);
   if not OutputPath.EndsWith('/') then
     OutputPath := OutputPath + '/';
 

@@ -60,7 +60,7 @@ begin
     for ChunkFile in FilesChunk do
     begin
       // First write a normalized relative path of the file.
-      Stream.WriteAnsiString(ChunkFile.Path.Remove(0, BasePath.Length).Trim.Replace('\', '/'));
+      Stream.WriteAnsiString(ChunkFile.Path.Remove(0, BasePath.Length).Trim.Replace('\', '/', [ rfReplaceAll ]));
       // Second write the uncompressed size of the file.
       Stream.WriteQWord(ChunkFile.Size);
       // Third write an MD5 hash of the file's contents.

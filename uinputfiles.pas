@@ -36,7 +36,7 @@ begin
     for ExcludedPath in ExcludedPaths do
     begin
       // Normalize the entry from the excluded path list
-      LoweredExcludedPath := ExcludedPath.Trim.ToLower.Replace('\', '/');
+      LoweredExcludedPath := ExcludedPath.Trim.ToLower.Replace('\', '/', [ rfReplaceAll ]);
       if LoweredExcludedPath.IsEmpty then
         Continue;
       // Make sure the excluded path begins with a /
@@ -45,7 +45,7 @@ begin
 
       for Index := Result.Count - 1 downto 0 do
         // Normalize the path and remove the base path part from it to compare it against the excluded path.
-        if Result.Strings[Index].Remove(0, BasePath.Length).ToLower.Replace('\', '/').StartsWith(LoweredExcludedPath) then
+        if Result.Strings[Index].Remove(0, BasePath.Length).ToLower.Replace('\', '/', [ rfReplaceAll ]).StartsWith(LoweredExcludedPath) then
           Result.Delete(Index);
     end;
 end;
