@@ -10,6 +10,6 @@ backup/
 lib/
 /debug-*
 /release-*
-/ignoredPaths.txt
-/*.flsr
-/*.md5
+*.flsr
+*.md5
+*.meta

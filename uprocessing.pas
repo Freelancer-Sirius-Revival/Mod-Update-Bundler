@@ -38,7 +38,7 @@ uses
   md5;
 
 const
-  IgnoredPathsFileName = 'ignoredPaths.txt';
+  // This list contains dedicated "fat" files. Any extension not listed here will be put into one shared chunk (e.g. .ale, .3db, .cmp etc.)
   ChunkedFileExtensions: array [0..7] of String = ('.ini', '.thn', '.wav', '.utf', '.bmp', '.tga', '.mat', '.txm');
 
 function TProcessProgress.GetDone: Boolean;
@@ -67,28 +67,6 @@ begin
   FTotalBytes := 0;
   FPercentage := 0;
   Done := False;
-end;
-
-function GetFilteredFilesList(const BasePath: String): TStrings;
-var
-  ExcludedPaths: TStrings = nil;
-begin
-  if DirectoryExists(BasePath) then
-  begin
-    if FileExists(IgnoredPathsFileName) then
-    begin
-      try
-        ExcludedPaths := TStringList.Create;
-        ExcludedPaths.LoadFromFile(IgnoredPathsFileName);
-      finally
-      end;
-    end;
-    Result := FindRelevantFiles(BasePath, ExcludedPaths);
-    if Assigned(ExcludedPaths) then
-      ExcludedPaths.Free;
-  end
-  else
-    Result := nil;
 end;
 
 procedure CreateChecksumFileForFile(const FileName: String);
@@ -196,7 +174,7 @@ begin
 
   CompleteBundlePath := OutputPath + FullBundleFileName + BundleFileExtension;
 
-  CompleteFileList := GetFilteredFilesList(InputPath);
+  CompleteFileList := FindAllFiles(InputPath, AllFilesMask, True, faDirectory or faHidden or faReadOnly);
   CompleteFilesChunks := ComputeChunkedFiles(CompleteFileList, ChunkedFileExtensions);
 
   // Gather any updates files, if anything was there to update.
