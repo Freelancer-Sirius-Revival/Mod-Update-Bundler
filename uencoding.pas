@@ -191,12 +191,12 @@ type
     FChunksManager: TFilesChunksManager;
     FOutputWriterThread: TOutputWriterThread;
     FPreviousProgressData: Int64;
-    FTotalBytesWritten: Int64;
+    FTotalBytesEncoded: Int64;
     procedure OnEncoderProcess(const Action: TLZMAProgressAction; const Value: Int64);
   protected
     procedure Execute; override;
   public
-    property TotalBytesWritten: Int64 read FTotalBytesWritten;
+    property TotalBytesEncoded: Int64 read FTotalBytesEncoded;
     constructor Create(const ChunksManager: TFilesChunksManager; const OutputWriterThread: TOutputWriterThread);
   end;
 
@@ -205,14 +205,14 @@ begin
   inherited Create(True);
   FChunksManager := ChunksManager;
   FOutputWriterThread := OutputWriterThread;
-  FTotalBytesWritten := 0;
+  FTotalBytesEncoded := 0;
 end;
 
 procedure TEncoderThread.OnEncoderProcess(const Action: TLZMAProgressAction; const Value: Int64);
 begin
   if Action = LPAPos then
   begin
-    InterlockedExchangeAdd64(FTotalBytesWritten, Value - FPreviousProgressData);
+    InterlockedExchangeAdd64(FTotalBytesEncoded, Value - FPreviousProgressData);
     FPreviousProgressData := Value;
   end;
 end;
@@ -248,7 +248,7 @@ var
   Encoders: array of TEncoderThread;
   Index: ValSInt;
   EncodersFinished: Boolean;
-  TotalBytesWritten: Int64;
+  BytesEncoded: Int64;
 begin
   // Prepare all threads and file chunks.
   FilesChunksManager := TFilesChunksManager.Create(FilesChunks);
@@ -270,16 +270,16 @@ begin
 
   // Wait for all encoder threads to finish work by polling every now and then.
   repeat
-    TotalBytesWritten := 0;
+    BytesEncoded := 0;
     EncodersFinished := True;
     for Index := 0 to High(Encoders) do
     begin
-      TotalBytesWritten := TotalBytesWritten + Encoders[Index].TotalBytesWritten;
+      BytesEncoded := BytesEncoded + Encoders[Index].TotalBytesEncoded;
       EncodersFinished := EncodersFinished and Encoders[Index].Finished;
     end;
     
     if Assigned(OnEncodingProgress) then
-      OnEncodingProgress(TotalBytesWritten);
+      OnEncodingProgress(BytesEncoded);
 
     Sleep(50);
   until EncodersFinished;
